@@ -1,0 +1,2381 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="filename" content="todo-manager.html" />
+  <title>待办事项管理系统</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: { sans: ['Inter', 'sans-serif'] },
+          colors: {
+            slate: tailwind.config?.theme?.colors?.slate || {}
+          }
+        }
+      }
+    };
+  </script>
+  <style>
+    /* ===== Base & Theme Variables ===== */
+    :root {
+      --bg-primary: #f8fafc;
+      --bg-secondary: #ffffff;
+      --bg-card: #ffffff;
+      --bg-sidebar: #ffffff;
+      --text-primary: #0f172a;
+      --text-secondary: #475569;
+      --text-muted: #94a3b8;
+      --border-color: #e2e8f0;
+      --accent: #6366f1;
+      --accent-light: #eef2ff;
+      --accent-hover: #4f46e5;
+      --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04);
+      --shadow-md: 0 4px 16px rgba(0,0,0,0.08);
+      --shadow-lg: 0 10px 40px rgba(0,0,0,0.12);
+      --radius: 12px;
+      --transition: all 0.2s cubic-bezier(0.4,0,0.2,1);
+    }
+    [data-theme="dark"] {
+      --bg-primary: #0f172a;
+      --bg-secondary: #1e293b;
+      --bg-card: #1e293b;
+      --bg-sidebar: #1e293b;
+      --text-primary: #f1f5f9;
+      --text-secondary: #94a3b8;
+      --text-muted: #475569;
+      --border-color: #334155;
+      --accent: #818cf8;
+      --accent-light: #1e1b4b;
+      --accent-hover: #6366f1;
+      --shadow: 0 1px 3px rgba(0,0,0,0.3);
+      --shadow-md: 0 4px 16px rgba(0,0,0,0.3);
+      --shadow-lg: 0 10px 40px rgba(0,0,0,0.4);
+    }
+    [data-theme="eye"] {
+      --bg-primary: #f0f4e8;
+      --bg-secondary: #e8f0dc;
+      --bg-card: #eef4e4;
+      --bg-sidebar: #e8f0dc;
+      --text-primary: #2d3a1e;
+      --text-secondary: #4a5c30;
+      --text-muted: #7a9050;
+      --border-color: #c8dca0;
+      --accent: #5a8a3c;
+      --accent-light: #d8ecc4;
+      --accent-hover: #4a7030;
+      --shadow: 0 1px 3px rgba(60,80,30,0.1);
+      --shadow-md: 0 4px 16px rgba(60,80,30,0.1);
+      --shadow-lg: 0 10px 40px rgba(60,80,30,0.15);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      transition: var(--transition);
+      min-height: 100vh;
+    }
+    .app-wrapper {
+      width: 1440px;
+      margin: 0 auto;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ===== Scrollbar ===== */
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 99px; }
+
+    /* ===== Top Nav ===== */
+    .top-nav {
+      background: var(--bg-secondary);
+      border-bottom: 1px solid var(--border-color);
+      height: 64px;
+      display: flex;
+      align-items: center;
+      padding: 0 32px;
+      gap: 16px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: var(--shadow);
+    }
+    .logo-mark {
+      width: 36px; height: 36px;
+      background: linear-gradient(135deg, var(--accent), var(--accent-hover));
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .nav-title { font-weight: 700; font-size: 17px; color: var(--text-primary); }
+    .nav-subtitle { font-size: 12px; color: var(--text-muted); margin-top: 1px; }
+    .nav-spacer { flex: 1; }
+    .nav-btn {
+      display: flex; align-items: center; gap: 6px;
+      padding: 7px 14px;
+      border-radius: 8px;
+      border: 1px solid var(--border-color);
+      background: var(--bg-card);
+      color: var(--text-secondary);
+      font-size: 13px; font-weight: 500;
+      cursor: pointer;
+      transition: var(--transition);
+      white-space: nowrap;
+    }
+    .nav-btn:hover { background: var(--accent-light); color: var(--accent); border-color: var(--accent); }
+    .nav-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+    .theme-btn {
+      width: 36px; height: 36px;
+      border-radius: 8px;
+      border: 1px solid var(--border-color);
+      background: var(--bg-card);
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer;
+      transition: var(--transition);
+      color: var(--text-secondary);
+    }
+    .theme-btn:hover { background: var(--accent-light); color: var(--accent); }
+    .progress-overview {
+      display: flex; align-items: center; gap: 10px;
+      padding: 6px 16px;
+      background: var(--bg-primary);
+      border-radius: 8px;
+      border: 1px solid var(--border-color);
+      font-size: 12px; color: var(--text-secondary);
+    }
+    .progress-bar-mini {
+      width: 120px; height: 6px;
+      background: var(--border-color);
+      border-radius: 99px;
+      overflow: hidden;
+    }
+    .progress-bar-mini-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent), var(--accent-hover));
+      border-radius: 99px;
+      transition: width 0.4s ease;
+    }
+
+    /* ===== Main Layout ===== */
+    .main-layout {
+      display: flex;
+      flex: 1;
+    }
+    /* ===== Sidebar ===== */
+    .sidebar {
+      width: 260px;
+      background: var(--bg-sidebar);
+      border-right: 1px solid var(--border-color);
+      padding: 24px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      flex-shrink: 0;
+      overflow-y: auto;
+      height: calc(100vh - 64px);
+      position: sticky;
+      top: 64px;
+    }
+    .sidebar-section-title {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      padding: 6px 10px 4px;
+      margin-top: 8px;
+    }
+    .sidebar-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 9px 12px;
+      border-radius: 9px;
+      cursor: pointer;
+      transition: var(--transition);
+      font-size: 13px; font-weight: 500;
+      color: var(--text-secondary);
+      position: relative;
+    }
+    .sidebar-item:hover { background: var(--accent-light); color: var(--accent); }
+    .sidebar-item.active { background: var(--accent-light); color: var(--accent); }
+    .sidebar-item .badge {
+      margin-left: auto;
+      background: var(--accent);
+      color: #fff;
+      font-size: 10px;
+      font-weight: 700;
+      padding: 1px 7px;
+      border-radius: 99px;
+      min-width: 20px;
+      text-align: center;
+    }
+    .sidebar-item .badge.warn { background: #f59e0b; }
+    .sidebar-item .badge.danger { background: #ef4444; }
+    .cat-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    /* ===== Content Area ===== */
+    .content-area {
+      flex: 1;
+      padding: 28px 32px;
+      overflow-y: auto;
+      min-width: 0;
+    }
+
+    /* ===== Stats Row ===== */
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 14px;
+      margin-bottom: 24px;
+    }
+    .stat-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius);
+      padding: 16px 18px;
+      box-shadow: var(--shadow);
+      transition: var(--transition);
+      cursor: default;
+    }
+    .stat-card:hover { box-shadow: var(--shadow-md); transform: translateY(-1px); }
+    .stat-label { font-size: 11px; color: var(--text-muted); font-weight: 500; text-transform: uppercase; letter-spacing: 0.06em; }
+    .stat-value { font-size: 26px; font-weight: 800; color: var(--text-primary); margin: 4px 0 2px; line-height: 1; }
+    .stat-sub { font-size: 11px; color: var(--text-muted); }
+    .stat-progress { margin-top: 8px; height: 4px; background: var(--border-color); border-radius: 99px; overflow: hidden; }
+    .stat-progress-fill { height: 100%; border-radius: 99px; }
+
+    /* ===== Toolbar ===== */
+    .toolbar {
+      display: flex; align-items: center; gap: 10px;
+      margin-bottom: 18px;
+      flex-wrap: wrap;
+    }
+    .search-box {
+      display: flex; align-items: center; gap: 8px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 9px;
+      padding: 8px 14px;
+      flex: 1; min-width: 200px;
+      transition: var(--transition);
+    }
+    .search-box:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-light); }
+    .search-box input {
+      border: none; outline: none;
+      background: transparent;
+      color: var(--text-primary);
+      font-size: 13px;
+      flex: 1;
+      font-family: 'Inter', sans-serif;
+    }
+    .search-box input::placeholder { color: var(--text-muted); }
+    .filter-select {
+      padding: 8px 12px;
+      border-radius: 9px;
+      border: 1px solid var(--border-color);
+      background: var(--bg-card);
+      color: var(--text-primary);
+      font-size: 13px;
+      font-family: 'Inter', sans-serif;
+      cursor: pointer;
+      outline: none;
+      transition: var(--transition);
+    }
+    .filter-select:focus { border-color: var(--accent); }
+    .btn-primary {
+      display: flex; align-items: center; gap: 6px;
+      padding: 8px 18px;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 9px;
+      font-size: 13px; font-weight: 600;
+      cursor: pointer;
+      transition: var(--transition);
+      white-space: nowrap;
+    }
+    .btn-primary:hover { background: var(--accent-hover); box-shadow: 0 4px 12px rgba(99,102,241,0.3); transform: translateY(-1px); }
+    .btn-secondary {
+      display: flex; align-items: center; gap: 6px;
+      padding: 8px 14px;
+      background: var(--bg-card);
+      color: var(--text-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 9px;
+      font-size: 13px; font-weight: 500;
+      cursor: pointer;
+      transition: var(--transition);
+      white-space: nowrap;
+    }
+    .btn-secondary:hover { background: var(--accent-light); color: var(--accent); border-color: var(--accent); }
+    .btn-danger {
+      display: flex; align-items: center; gap: 6px;
+      padding: 8px 14px;
+      background: #fef2f2;
+      color: #ef4444;
+      border: 1px solid #fecaca;
+      border-radius: 9px;
+      font-size: 13px; font-weight: 500;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+    .btn-danger:hover { background: #ef4444; color: #fff; }
+
+    /* ===== Batch Bar ===== */
+    .batch-bar {
+      display: none;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 16px;
+      background: var(--accent-light);
+      border: 1px solid var(--accent);
+      border-radius: 10px;
+      margin-bottom: 14px;
+      animation: slideDown 0.2s ease;
+    }
+    .batch-bar.visible { display: flex; }
+    @keyframes slideDown { from { opacity:0; transform: translateY(-8px); } to { opacity:1; transform: translateY(0); } }
+    .batch-count { font-size: 13px; font-weight: 600; color: var(--accent); flex: 1; }
+
+    /* ===== Task Grid / List ===== */
+    .tasks-container { }
+    .task-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+    }
+    .task-list { display: flex; flex-direction: column; gap: 8px; }
+
+    /* ===== Task Card ===== */
+    .task-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius);
+      padding: 16px;
+      box-shadow: var(--shadow);
+      transition: var(--transition);
+      position: relative;
+      overflow: hidden;
+      cursor: pointer;
+    }
+    .task-card::before {
+      content: '';
+      position: absolute;
+      left: 0; top: 0; bottom: 0;
+      width: 3px;
+      border-radius: 99px 0 0 99px;
+    }
+    .task-card.priority-critical::before { background: #ef4444; }
+    .task-card.priority-high::before { background: #f97316; }
+    .task-card.priority-medium::before { background: #f59e0b; }
+    .task-card.priority-low::before { background: #22c55e; }
+    .task-card:hover { box-shadow: var(--shadow-md); transform: translateY(-2px); border-color: var(--accent); }
+    .task-card.selected { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-light), var(--shadow-md); }
+    .task-card.completed { opacity: 0.6; }
+    .task-card.completed .task-title { text-decoration: line-through; color: var(--text-muted); }
+
+    .task-card-header { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 10px; }
+    .task-checkbox {
+      width: 18px; height: 18px;
+      border-radius: 5px;
+      border: 2px solid var(--border-color);
+      flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      transition: var(--transition);
+      margin-top: 1px;
+      cursor: pointer;
+    }
+    .task-checkbox.checked { background: var(--accent); border-color: var(--accent); }
+    .task-title { font-size: 14px; font-weight: 600; color: var(--text-primary); flex: 1; line-height: 1.4; }
+    .task-more { color: var(--text-muted); padding: 2px; border-radius: 5px; transition: var(--transition); flex-shrink: 0; }
+    .task-more:hover { background: var(--accent-light); color: var(--accent); }
+    .task-desc { font-size: 12px; color: var(--text-secondary); margin-bottom: 10px; line-height: 1.5; }
+    .task-meta { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
+    .tag {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 2px 8px;
+      border-radius: 99px;
+      font-size: 11px; font-weight: 500;
+    }
+    .tag-cat { background: var(--accent-light); color: var(--accent); }
+    .tag-priority-critical { background: #fef2f2; color: #ef4444; }
+    .tag-priority-high { background: #fff7ed; color: #f97316; }
+    .tag-priority-medium { background: #fffbeb; color: #d97706; }
+    .tag-priority-low { background: #f0fdf4; color: #16a34a; }
+    .tag-deadline { background: var(--bg-primary); color: var(--text-secondary); border: 1px solid var(--border-color); }
+    .tag-deadline.overdue { background: #fef2f2; color: #ef4444; border-color: #fecaca; }
+    .tag-deadline.urgent { background: #fff7ed; color: #f97316; border-color: #fed7aa; }
+
+    /* countdown */
+    .countdown-chip {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 2px 8px;
+      border-radius: 99px;
+      font-size: 11px; font-weight: 600;
+      background: #fef2f2; color: #ef4444;
+      animation: pulse-red 2s ease-in-out infinite;
+    }
+    @keyframes pulse-red { 0%,100%{opacity:1} 50%{opacity:0.6} }
+    .countdown-chip.warn { background: #fff7ed; color: #f97316; animation: pulse-orange 2s ease-in-out infinite; }
+    @keyframes pulse-orange { 0%,100%{opacity:1} 50%{opacity:0.7} }
+
+    /* task progress */
+    .task-progress-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+    .task-progress-bar { flex: 1; height: 5px; background: var(--border-color); border-radius: 99px; overflow: hidden; }
+    .task-progress-fill { height: 100%; border-radius: 99px; background: linear-gradient(90deg, var(--accent), var(--accent-hover)); transition: width 0.4s ease; }
+    .task-progress-pct { font-size: 11px; font-weight: 600; color: var(--accent); white-space: nowrap; }
+
+    /* task footer */
+    .task-footer { display: flex; align-items: center; justify-content: space-between; padding-top: 8px; border-top: 1px solid var(--border-color); }
+    .task-assignee { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--text-muted); }
+    .avatar-xs { width: 20px; height: 20px; border-radius: 50%; object-fit: cover; }
+
+    /* list view card */
+    .task-card.list-view {
+      padding: 12px 16px;
+      display: flex; align-items: center; gap: 12px;
+    }
+    .task-card.list-view .task-title { font-size: 13px; }
+    .task-card.list-view .task-meta { margin-bottom: 0; }
+    .list-main { flex: 1; min-width: 0; }
+    .list-right { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+
+    /* ===== Alert Banner ===== */
+    .alert-banner {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 16px;
+      border-radius: 10px;
+      margin-bottom: 18px;
+      font-size: 13px;
+      animation: slideDown 0.3s ease;
+    }
+    .alert-critical { background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; }
+    .alert-warning { background: #fffbeb; border: 1px solid #fde68a; color: #92400e; }
+
+    /* ===== Modal Overlay ===== */
+    .modal-overlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.4);
+      backdrop-filter: blur(4px);
+      z-index: 500;
+      display: none; align-items: center; justify-content: center;
+      animation: fadeIn 0.2s ease;
+    }
+    .modal-overlay.open { display: flex; }
+    @keyframes fadeIn { from{opacity:0} to{opacity:1} }
+    .modal-box {
+      background: var(--bg-card);
+      border-radius: 16px;
+      box-shadow: var(--shadow-lg);
+      width: 520px;
+      max-height: 90vh;
+      overflow-y: auto;
+      animation: scaleIn 0.2s cubic-bezier(0.4,0,0.2,1);
+    }
+    .modal-box.modal-sm { width: 380px; }
+    .modal-box.modal-lg { width: 680px; }
+    @keyframes scaleIn { from{opacity:0;transform:scale(0.95)} to{opacity:1;transform:scale(1)} }
+    .modal-header {
+      padding: 20px 24px 16px;
+      border-bottom: 1px solid var(--border-color);
+      display: flex; align-items: center; gap: 12px;
+    }
+    .modal-title { font-size: 16px; font-weight: 700; color: var(--text-primary); flex: 1; }
+    .modal-close {
+      width: 32px; height: 32px;
+      border-radius: 8px;
+      border: 1px solid var(--border-color);
+      background: var(--bg-primary);
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; color: var(--text-muted);
+      transition: var(--transition);
+    }
+    .modal-close:hover { background: #fef2f2; color: #ef4444; border-color: #fecaca; }
+    .modal-body { padding: 20px 24px; }
+    .modal-footer { padding: 16px 24px; border-top: 1px solid var(--border-color); display: flex; gap: 10px; justify-content: flex-end; }
+
+    /* ===== Form Fields ===== */
+    .form-group { margin-bottom: 16px; }
+    .form-label { display: block; font-size: 12px; font-weight: 600; color: var(--text-secondary); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.05em; }
+    .form-input, .form-textarea, .form-select {
+      width: 100%;
+      padding: 9px 12px;
+      border: 1px solid var(--border-color);
+      border-radius: 9px;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      font-size: 13px;
+      font-family: 'Inter', sans-serif;
+      outline: none;
+      transition: var(--transition);
+    }
+    .form-input:focus, .form-textarea:focus, .form-select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-light);
+    }
+    .form-textarea { resize: vertical; min-height: 80px; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .form-hint { font-size: 11px; color: var(--text-muted); margin-top: 4px; }
+    .dup-warning { display: none; font-size: 11px; color: #ef4444; margin-top: 4px; background: #fef2f2; padding: 4px 8px; border-radius: 6px; }
+    .dup-warning.show { display: block; }
+
+    /* ===== Priority Radio ===== */
+    .priority-radios { display: flex; gap: 8px; }
+    .priority-radio-item { display: none; }
+    .priority-radio-label {
+      display: flex; align-items: center; gap: 5px;
+      padding: 6px 12px;
+      border-radius: 7px;
+      border: 1.5px solid var(--border-color);
+      font-size: 12px; font-weight: 500;
+      cursor: pointer;
+      transition: var(--transition);
+      color: var(--text-secondary);
+    }
+    .priority-radio-item:checked + .priority-radio-label { border-color: currentColor; }
+    .priority-radio-label.p-critical { }
+    .priority-radio-item:checked + .priority-radio-label.p-critical { background: #fef2f2; color: #ef4444; border-color: #ef4444; }
+    .priority-radio-item:checked + .priority-radio-label.p-high { background: #fff7ed; color: #f97316; border-color: #f97316; }
+    .priority-radio-item:checked + .priority-radio-label.p-medium { background: #fffbeb; color: #d97706; border-color: #f59e0b; }
+    .priority-radio-item:checked + .priority-radio-label.p-low { background: #f0fdf4; color: #16a34a; border-color: #22c55e; }
+
+    /* ===== Category Pill Picker ===== */
+    .cat-picker { display: flex; gap: 8px; flex-wrap: wrap; }
+    .cat-pill {
+      padding: 5px 12px;
+      border-radius: 99px;
+      border: 1.5px solid var(--border-color);
+      font-size: 12px; font-weight: 500;
+      cursor: pointer;
+      transition: var(--transition);
+      color: var(--text-secondary);
+    }
+    .cat-pill.selected { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+    /* ===== Settings Panel ===== */
+    .settings-section { margin-bottom: 24px; }
+    .settings-section-title { font-size: 13px; font-weight: 700; color: var(--text-primary); margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+    .settings-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--border-color); }
+    .settings-row:last-child { border-bottom: none; }
+    .settings-label { font-size: 13px; color: var(--text-primary); }
+    .settings-desc { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+    .toggle-switch {
+      position: relative; width: 42px; height: 24px;
+      background: var(--border-color);
+      border-radius: 99px;
+      cursor: pointer;
+      transition: var(--transition);
+      flex-shrink: 0;
+    }
+    .toggle-switch.on { background: var(--accent); }
+    .toggle-knob {
+      position: absolute; top: 3px; left: 3px;
+      width: 18px; height: 18px;
+      background: #fff;
+      border-radius: 50%;
+      transition: var(--transition);
+      box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+    }
+    .toggle-switch.on .toggle-knob { left: 21px; }
+
+    .theme-options { display: flex; gap: 10px; }
+    .theme-option {
+      padding: 8px 16px;
+      border-radius: 8px;
+      border: 1.5px solid var(--border-color);
+      font-size: 12px; font-weight: 500;
+      cursor: pointer;
+      transition: var(--transition);
+      color: var(--text-secondary);
+      display: flex; align-items: center; gap: 6px;
+    }
+    .theme-option.active { border-color: var(--accent); background: var(--accent-light); color: var(--accent); }
+    .layout-options { display: flex; gap: 10px; }
+    .layout-option {
+      padding: 6px 14px;
+      border-radius: 8px;
+      border: 1.5px solid var(--border-color);
+      font-size: 12px; font-weight: 500;
+      cursor: pointer;
+      transition: var(--transition);
+      color: var(--text-secondary);
+      display: flex; align-items: center; gap: 5px;
+    }
+    .layout-option.active { border-color: var(--accent); background: var(--accent-light); color: var(--accent); }
+
+    /* ===== Lock Screen ===== */
+    .lock-screen {
+      position: fixed; inset: 0;
+      background: rgba(15,23,42,0.96);
+      backdrop-filter: blur(20px);
+      z-index: 999;
+      display: none; align-items: center; justify-content: center;
+      flex-direction: column;
+      gap: 24px;
+    }
+    .lock-screen.active { display: flex; }
+    .lock-logo { width: 64px; height: 64px; background: linear-gradient(135deg, #6366f1, #4f46e5); border-radius: 18px; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 40px rgba(99,102,241,0.4); }
+    .lock-title { color: #f1f5f9; font-size: 22px; font-weight: 700; text-align: center; }
+    .lock-sub { color: #64748b; font-size: 14px; text-align: center; margin-top: 4px; }
+    .pin-dots { display: flex; gap: 14px; margin: 8px 0; }
+    .pin-dot { width: 14px; height: 14px; border-radius: 50%; border: 2px solid #475569; background: transparent; transition: var(--transition); }
+    .pin-dot.filled { background: #6366f1; border-color: #6366f1; }
+    .pin-keypad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; width: 240px; }
+    .pin-key {
+      height: 58px; border-radius: 12px;
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.1);
+      color: #f1f5f9;
+      font-size: 20px; font-weight: 600;
+      cursor: pointer;
+      transition: var(--transition);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .pin-key:hover { background: rgba(99,102,241,0.2); border-color: rgba(99,102,241,0.4); }
+    .pin-key:active { transform: scale(0.95); }
+    .pin-error { color: #ef4444; font-size: 12px; text-align: center; min-height: 18px; }
+
+    /* ===== Notification Toast ===== */
+    .toast-container { position: fixed; top: 80px; right: 24px; z-index: 600; display: flex; flex-direction: column; gap: 8px; pointer-events: none; }
+    .toast {
+      display: flex; align-items: center; gap: 10px;
+      padding: 12px 16px;
+      border-radius: 10px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      box-shadow: var(--shadow-lg);
+      font-size: 13px;
+      pointer-events: all;
+      animation: toastIn 0.3s ease;
+      min-width: 280px; max-width: 360px;
+    }
+    @keyframes toastIn { from{opacity:0;transform:translateX(20px)} to{opacity:1;transform:translateX(0)} }
+    @keyframes toastOut { from{opacity:1;transform:translateX(0)} to{opacity:0;transform:translateX(20px)} }
+    .toast.removing { animation: toastOut 0.3s ease forwards; }
+    .toast-icon { width: 28px; height: 28px; border-radius: 7px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .toast-success .toast-icon { background: #f0fdf4; color: #16a34a; }
+    .toast-error .toast-icon { background: #fef2f2; color: #ef4444; }
+    .toast-warn .toast-icon { background: #fffbeb; color: #d97706; }
+    .toast-info .toast-icon { background: var(--accent-light); color: var(--accent); }
+    .toast-text { flex: 1; color: var(--text-primary); font-weight: 500; }
+    .toast-close { color: var(--text-muted); cursor: pointer; padding: 2px; }
+
+    /* ===== Empty State ===== */
+    .empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 60px 20px; gap: 12px; }
+    .empty-icon { width: 60px; height: 60px; border-radius: 16px; background: var(--accent-light); display: flex; align-items: center; justify-content: center; color: var(--accent); }
+    .empty-title { font-size: 16px; font-weight: 600; color: var(--text-primary); }
+    .empty-sub { font-size: 13px; color: var(--text-muted); text-align: center; max-width: 280px; }
+
+    /* ===== Context Menu ===== */
+    .context-menu {
+      position: fixed;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      box-shadow: var(--shadow-lg);
+      z-index: 800;
+      min-width: 160px;
+      overflow: hidden;
+      display: none;
+    }
+    .context-menu.open { display: block; animation: scaleIn 0.15s ease; }
+    .ctx-item {
+      display: flex; align-items: center; gap: 8px;
+      padding: 9px 14px;
+      font-size: 13px; color: var(--text-primary);
+      cursor: pointer; transition: var(--transition);
+    }
+    .ctx-item:hover { background: var(--accent-light); color: var(--accent); }
+    .ctx-item.danger:hover { background: #fef2f2; color: #ef4444; }
+    .ctx-divider { height: 1px; background: var(--border-color); }
+
+    /* ===== Card Style Selector ===== */
+    .card-style-preview { display: flex; gap: 10px; flex-wrap: wrap; }
+    .card-style-opt {
+      width: 80px; height: 56px;
+      border-radius: 8px;
+      border: 2px solid var(--border-color);
+      cursor: pointer;
+      transition: var(--transition);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 10px; color: var(--text-muted); font-weight: 500;
+      flex-direction: column; gap: 4px;
+    }
+    .card-style-opt.active { border-color: var(--accent); background: var(--accent-light); color: var(--accent); }
+    .card-style-opt:hover { border-color: var(--accent); }
+
+    /* ===== Reminder Badge ===== */
+    .reminder-dot { width: 8px; height: 8px; background: #ef4444; border-radius: 50%; position: absolute; top: -2px; right: -2px; animation: pulse-red 1.5s ease-in-out infinite; }
+
+    /* ===== Responsive Hint (hidden on desktop) ===== */
+    .mobile-hint { display: none; }
+  </style>
+</head>
+<body>
+
+<!-- ===== Lock Screen ===== -->
+<div class="lock-screen active" id="lock-screen">
+  <div class="lock-logo"><i data-lucide="shield-check" style="width:32px;height:32px;color:#fff"></i></div>
+  <div>
+    <div class="lock-title">待办事项管理系统</div>
+    <div class="lock-sub">请输入 PIN 码解锁</div>
+  </div>
+  <div class="pin-dots" id="pin-dots">
+    <div class="pin-dot" id="pd0"></div>
+    <div class="pin-dot" id="pd1"></div>
+    <div class="pin-dot" id="pd2"></div>
+    <div class="pin-dot" id="pd3"></div>
+  </div>
+  <div class="pin-error" id="pin-error"></div>
+  <div class="pin-keypad">
+    <button class="pin-key" id="pk1">1</button>
+    <button class="pin-key" id="pk2">2</button>
+    <button class="pin-key" id="pk3">3</button>
+    <button class="pin-key" id="pk4">4</button>
+    <button class="pin-key" id="pk5">5</button>
+    <button class="pin-key" id="pk6">6</button>
+    <button class="pin-key" id="pk7">7</button>
+    <button class="pin-key" id="pk8">8</button>
+    <button class="pin-key" id="pk9">9</button>
+    <button class="pin-key" id="pk-clear" style="font-size:13px;">清除</button>
+    <button class="pin-key" id="pk0">0</button>
+    <button class="pin-key" id="pk-del" style="font-size:13px;">⌫</button>
+  </div>
+  <div style="color:#475569;font-size:12px;">默认 PIN: 1234</div>
+</div>
+
+<!-- ===== Toast Container ===== -->
+<div class="toast-container" id="toast-container"></div>
+
+<!-- ===== Context Menu ===== -->
+<div class="context-menu" id="ctx-menu">
+  <div class="ctx-item" id="ctx-edit"><i data-lucide="pencil" style="width:14px;height:14px"></i> 编辑任务</div>
+  <div class="ctx-item" id="ctx-complete"><i data-lucide="check-circle" style="width:14px;height:14px"></i> 标记完成</div>
+  <div class="ctx-item" id="ctx-progress"><i data-lucide="trending-up" style="width:14px;height:14px"></i> 更新进度</div>
+  <div class="ctx-divider"></div>
+  <div class="ctx-item danger" id="ctx-delete"><i data-lucide="trash-2" style="width:14px;height:14px"></i> 删除任务</div>
+</div>
+
+<!-- ===== Main App ===== -->
+<div class="app-wrapper" id="app-wrapper">
+
+  <!-- Top Nav -->
+  <nav class="top-nav">
+    <div class="logo-mark"><i data-lucide="check-square" style="width:18px;height:18px;color:#fff"></i></div>
+    <div>
+      <div class="nav-title">TaskFlow Pro</div>
+      <div class="nav-subtitle">智能待办管理系统</div>
+    </div>
+    <div class="progress-overview" id="nav-progress">
+      <span style="font-size:12px;color:var(--text-muted)">总进度</span>
+      <div class="progress-bar-mini"><div class="progress-bar-mini-fill" id="nav-prog-fill" style="width:0%"></div></div>
+      <span id="nav-prog-pct" style="font-size:12px;font-weight:600;color:var(--accent)">0%</span>
+    </div>
+    <div class="nav-spacer"></div>
+    <button class="nav-btn" id="btn-lock">
+      <i data-lucide="lock" style="width:14px;height:14px"></i> 锁定
+    </button>
+    <div style="position:relative;">
+      <button class="nav-btn" id="btn-notify-bell">
+        <i data-lucide="bell" style="width:14px;height:14px"></i> 提醒
+      </button>
+      <div class="reminder-dot" id="notify-dot" style="display:none;"></div>
+    </div>
+    <button class="nav-btn" id="btn-open-settings">
+      <i data-lucide="settings" style="width:14px;height:14px"></i> 设置
+    </button>
+    <button class="btn-primary" id="btn-open-add">
+      <i data-lucide="plus" style="width:14px;height:14px"></i> 新建任务
+    </button>
+  </nav>
+
+  <div class="main-layout">
+
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-section-title">视图</div>
+      <div class="sidebar-item active" id="sn-all">
+        <i data-lucide="layers" style="width:15px;height:15px"></i> 全部任务
+        <span class="badge" id="badge-all">0</span>
+      </div>
+      <div class="sidebar-item" id="sn-today">
+        <i data-lucide="calendar" style="width:15px;height:15px"></i> 今日
+        <span class="badge" id="badge-today">0</span>
+      </div>
+      <div class="sidebar-item" id="sn-week">
+        <i data-lucide="calendar-range" style="width:15px;height:15px"></i> 本周
+        <span class="badge" id="badge-week">0</span>
+      </div>
+      <div class="sidebar-item" id="sn-overdue">
+        <i data-lucide="alert-triangle" style="width:15px;height:15px"></i> 已逾期
+        <span class="badge danger" id="badge-overdue">0</span>
+      </div>
+      <div class="sidebar-item" id="sn-done">
+        <i data-lucide="check-circle-2" style="width:15px;height:15px"></i> 已完成
+        <span class="badge" id="badge-done">0</span>
+      </div>
+
+      <div class="sidebar-section-title">优先级</div>
+      <div class="sidebar-item" id="sn-p-critical">
+        <span style="width:8px;height:8px;background:#ef4444;border-radius:50%;flex-shrink:0;display:inline-block;"></span> 紧急
+        <span class="badge danger" id="badge-critical">0</span>
+      </div>
+      <div class="sidebar-item" id="sn-p-high">
+        <span style="width:8px;height:8px;background:#f97316;border-radius:50%;flex-shrink:0;display:inline-block;"></span> 高
+        <span class="badge warn" id="badge-high">0</span>
+      </div>
+      <div class="sidebar-item" id="sn-p-medium">
+        <span style="width:8px;height:8px;background:#f59e0b;border-radius:50%;flex-shrink:0;display:inline-block;"></span> 中
+        <span class="badge" style="background:#f59e0b" id="badge-medium">0</span>
+      </div>
+      <div class="sidebar-item" id="sn-p-low">
+        <span style="width:8px;height:8px;background:#22c55e;border-radius:50%;flex-shrink:0;display:inline-block;"></span> 低
+        <span class="badge" style="background:#22c55e" id="badge-low">0</span>
+      </div>
+
+      <div class="sidebar-section-title">类别</div>
+      <div id="sidebar-cats"></div>
+
+      <div class="sidebar-section-title" style="margin-top:auto;padding-top:16px;"></div>
+      <div style="padding: 10px 12px; background: var(--accent-light); border-radius: 10px; margin-top: 8px;">
+        <div style="font-size:11px;font-weight:700;color:var(--accent);margin-bottom:6px;">本周完成率</div>
+        <div style="font-size:22px;font-weight:800;color:var(--text-primary);" id="week-rate">0%</div>
+        <div style="height:5px;background:var(--border-color);border-radius:99px;margin-top:6px;overflow:hidden;">
+          <div id="week-rate-fill" style="height:100%;background:var(--accent);border-radius:99px;transition:width 0.4s ease;width:0%;"></div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Content -->
+    <main class="content-area">
+
+      <!-- Alert Banners -->
+      <div id="alert-area"></div>
+
+      <!-- Stats -->
+      <div class="stats-row">
+        <div class="stat-card">
+          <div class="stat-label">总任务</div>
+          <div class="stat-value" id="s-total">0</div>
+          <div class="stat-sub">所有待办</div>
+          <div class="stat-progress"><div class="stat-progress-fill" style="width:100%;background:var(--accent);"></div></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">进行中</div>
+          <div class="stat-value" id="s-progress">0</div>
+          <div class="stat-sub">正在处理</div>
+          <div class="stat-progress"><div class="stat-progress-fill" id="sf-progress" style="width:0%;background:#6366f1;"></div></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">已完成</div>
+          <div class="stat-value" id="s-done">0</div>
+          <div class="stat-sub">成功关闭</div>
+          <div class="stat-progress"><div class="stat-progress-fill" id="sf-done" style="width:0%;background:#22c55e;"></div></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">已逾期</div>
+          <div class="stat-value" id="s-overdue" style="color:#ef4444;">0</div>
+          <div class="stat-sub">需立即处理</div>
+          <div class="stat-progress"><div class="stat-progress-fill" id="sf-overdue" style="width:0%;background:#ef4444;"></div></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">总完成率</div>
+          <div class="stat-value" id="s-rate">0%</div>
+          <div class="stat-sub" id="s-rate-sub">整体进度</div>
+          <div class="stat-progress"><div class="stat-progress-fill" id="sf-rate" style="width:0%;background:linear-gradient(90deg,#6366f1,#4f46e5);"></div></div>
+        </div>
+      </div>
+
+      <!-- Toolbar -->
+      <div class="toolbar">
+        <div class="search-box">
+          <i data-lucide="search" style="width:15px;height:15px;color:var(--text-muted);flex-shrink:0;"></i>
+          <input type="text" id="search-input" placeholder="搜索任务名称或描述…" />
+        </div>
+        <!-- Category Filter -->
+        <select class="filter-select" id="filter-cat">
+          <option value="">全部类别</option>
+        </select>
+        <!-- Cycle Filter -->
+        <select class="filter-select" id="filter-cycle">
+          <option value="">全部周期</option>
+          <option value="today">今天</option>
+          <option value="week">本周</option>
+          <option value="month">本月</option>
+          <option value="overdue">已逾期</option>
+        </select>
+        <!-- Priority Filter -->
+        <select class="filter-select" id="filter-priority">
+          <option value="">全部优先级</option>
+          <option value="critical">🔴 紧急</option>
+          <option value="high">🟠 高</option>
+          <option value="medium">🟡 中</option>
+          <option value="low">🟢 低</option>
+        </select>
+        <button class="btn-secondary" id="btn-batch-select">
+          <i data-lucide="check-square" style="width:14px;height:14px"></i> 批量操作
+        </button>
+        <button class="btn-secondary" id="btn-layout-grid" title="网格布局">
+          <i data-lucide="layout-grid" style="width:14px;height:14px"></i>
+        </button>
+        <button class="btn-secondary" id="btn-layout-list" title="列表布局">
+          <i data-lucide="list" style="width:14px;height:14px"></i>
+        </button>
+      </div>
+
+      <!-- Batch Bar -->
+      <div class="batch-bar" id="batch-bar">
+        <i data-lucide="check-square" style="width:16px;height:16px;color:var(--accent);"></i>
+        <span class="batch-count" id="batch-count-text">已选择 0 项</span>
+        <button class="btn-secondary" id="batch-select-all">全选</button>
+        <button class="btn-secondary" id="batch-done">标记完成</button>
+        <button class="btn-secondary" id="batch-undone">标记未完成</button>
+        <button class="btn-danger" id="batch-delete">
+          <i data-lucide="trash-2" style="width:13px;height:13px"></i> 批量删除
+        </button>
+        <button class="btn-secondary" id="batch-cancel">取消</button>
+      </div>
+
+      <!-- Task Area -->
+      <div id="tasks-container" class="tasks-container">
+        <div class="task-grid" id="task-grid"></div>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<!-- ===== Modal: Add/Edit Task ===== -->
+<div class="modal-overlay" id="modal-add">
+  <div class="modal-box">
+    <div class="modal-header">
+      <div style="width:36px;height:36px;background:var(--accent-light);border-radius:9px;display:flex;align-items:center;justify-content:center;color:var(--accent);">
+        <i data-lucide="plus-circle" style="width:18px;height:18px;"></i>
+      </div>
+      <div class="modal-title" id="add-modal-title">新建任务</div>
+      <div class="modal-close" id="close-add-modal"><i data-lucide="x" style="width:16px;height:16px;"></i></div>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="edit-task-id" value="" />
+      <!-- Task Title -->
+      <div class="form-group">
+        <label class="form-label">任务标题 *</label>
+        <input type="text" class="form-input" id="task-title-input" placeholder="输入任务标题…" maxlength="80" />
+        <div class="dup-warning" id="dup-warning">⚠️ 相同日期已存在同名任务，请修改标题或日期</div>
+        <div class="form-hint">最多 80 字符，同一日期内不可重复</div>
+      </div>
+      <!-- Description -->
+      <div class="form-group">
+        <label class="form-label">描述</label>
+        <textarea class="form-textarea" id="task-desc-input" placeholder="详细说明（可选）…"></textarea>
+      </div>
+      <!-- Row: Category + Priority -->
+      <div class="form-row">
+        <div class="form-group" style="margin-bottom:0;">
+          <label class="form-label">类别 *</label>
+          <select class="form-select" id="task-cat-input">
+            <option value="">选择类别…</option>
+          </select>
+        </div>
+        <div class="form-group" style="margin-bottom:0;">
+          <label class="form-label">周期</label>
+          <select class="form-select" id="task-cycle-input">
+            <option value="none">无周期</option>
+            <option value="daily">每天</option>
+            <option value="weekly">每周</option>
+            <option value="monthly">每月</option>
+          </select>
+        </div>
+      </div>
+      <!-- Priority -->
+      <div class="form-group" style="margin-top:14px;">
+        <label class="form-label">优先级 *</label>
+        <div class="priority-radios">
+          <input type="radio" name="task-priority" id="pr-critical" value="critical" class="priority-radio-item" />
+          <label for="pr-critical" class="priority-radio-label p-critical">🔴 紧急</label>
+          <input type="radio" name="task-priority" id="pr-high" value="high" class="priority-radio-item" />
+          <label for="pr-high" class="priority-radio-label p-high">🟠 高</label>
+          <input type="radio" name="task-priority" id="pr-medium" value="medium" class="priority-radio-item" checked />
+          <label for="pr-medium" class="priority-radio-label p-medium">🟡 中</label>
+          <input type="radio" name="task-priority" id="pr-low" value="low" class="priority-radio-item" />
+          <label for="pr-low" class="priority-radio-label p-low">🟢 低</label>
+        </div>
+      </div>
+      <!-- Row: Deadline + Reminder -->
+      <div class="form-row">
+        <div class="form-group" style="margin-bottom:0;">
+          <label class="form-label">截止时间</label>
+          <input type="datetime-local" class="form-input" id="task-deadline-input" />
+        </div>
+        <div class="form-group" style="margin-bottom:0;">
+          <label class="form-label">提醒时间</label>
+          <input type="datetime-local" class="form-input" id="task-reminder-input" />
+        </div>
+      </div>
+      <!-- Progress -->
+      <div class="form-group" style="margin-top:14px;">
+        <label class="form-label">初始进度 <span id="prog-val-label" style="color:var(--accent);font-weight:700;">0%</span></label>
+        <input type="range" id="task-progress-input" min="0" max="100" value="0" style="width:100%;accent-color:var(--accent);" />
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" id="cancel-add-btn">取消</button>
+      <button class="btn-primary" id="confirm-add-btn">
+        <i data-lucide="check" style="width:14px;height:14px"></i> 保存任务
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Modal: Settings ===== -->
+<div class="modal-overlay" id="modal-settings">
+  <div class="modal-box modal-lg">
+    <div class="modal-header">
+      <div style="width:36px;height:36px;background:var(--accent-light);border-radius:9px;display:flex;align-items:center;justify-content:center;color:var(--accent);">
+        <i data-lucide="settings-2" style="width:18px;height:18px;"></i>
+      </div>
+      <div class="modal-title">偏好设置</div>
+      <div class="modal-close" id="close-settings-modal"><i data-lucide="x" style="width:16px;height:16px;"></i></div>
+    </div>
+    <div class="modal-body" style="display:grid;grid-template-columns:1fr 1fr;gap:24px;">
+      <!-- Left Column -->
+      <div>
+        <!-- Theme -->
+        <div class="settings-section">
+          <div class="settings-section-title"><i data-lucide="palette" style="width:15px;height:15px;"></i> 主题模式</div>
+          <div class="theme-options">
+            <div class="theme-option active" id="theme-light">☀️ 亮色</div>
+            <div class="theme-option" id="theme-dark">🌙 深色</div>
+            <div class="theme-option" id="theme-eye">🌿 护眼</div>
+          </div>
+        </div>
+        <!-- Layout -->
+        <div class="settings-section">
+          <div class="settings-section-title"><i data-lucide="layout-grid" style="width:15px;height:15px;"></i> 布局方式</div>
+          <div class="layout-options">
+            <div class="layout-option active" id="layout-grid-btn">
+              <i data-lucide="layout-grid" style="width:13px;height:13px;"></i> 网格
+            </div>
+            <div class="layout-option" id="layout-list-btn">
+              <i data-lucide="list" style="width:13px;height:13px;"></i> 列表
+            </div>
+          </div>
+        </div>
+        <!-- Card Style -->
+        <div class="settings-section">
+          <div class="settings-section-title"><i data-lucide="square" style="width:15px;height:15px;"></i> 任务卡样式</div>
+          <div class="card-style-preview">
+            <div class="card-style-opt active" id="cs-default">
+              <i data-lucide="credit-card" style="width:14px;height:14px;"></i> 标准
+            </div>
+            <div class="card-style-opt" id="cs-compact">
+              <i data-lucide="minus-square" style="width:14px;height:14px;"></i> 紧凑
+            </div>
+            <div class="card-style-opt" id="cs-spacious">
+              <i data-lucide="maximize-2" style="width:14px;height:14px;"></i> 宽松
+            </div>
+          </div>
+        </div>
+        <!-- Progress Display -->
+        <div class="settings-section">
+          <div class="settings-section-title"><i data-lucide="bar-chart-2" style="width:15px;height:15px;"></i> 进度显示方式</div>
+          <div class="layout-options">
+            <div class="layout-option active" id="prog-both-btn">进度条+百分比</div>
+            <div class="layout-option" id="prog-bar-btn">仅进度条</div>
+            <div class="layout-option" id="prog-pct-btn">仅百分比</div>
+          </div>
+        </div>
+      </div>
+      <!-- Right Column -->
+      <div>
+        <!-- Security -->
+        <div class="settings-section">
+          <div class="settings-section-title"><i data-lucide="shield" style="width:15px;height:15px;"></i> 安全设置</div>
+          <div class="settings-row">
+            <div>
+              <div class="settings-label">PIN 码锁定</div>
+              <div class="settings-desc">启动时需要输入 PIN 码</div>
+            </div>
+            <div class="toggle-switch on" id="pin-toggle">
+              <div class="toggle-knob"></div>
+            </div>
+          </div>
+          <div class="settings-row">
+            <div>
+              <div class="settings-label">修改 PIN 码</div>
+              <div class="settings-desc" id="pin-hint">当前 PIN: ****</div>
+            </div>
+            <button class="btn-secondary" id="btn-change-pin">修改</button>
+          </div>
+        </div>
+        <!-- Notifications -->
+        <div class="settings-section">
+          <div class="settings-section-title"><i data-lucide="bell" style="width:15px;height:15px;"></i> 通知提醒</div>
+          <div class="settings-row">
+            <div>
+              <div class="settings-label">到期提醒</div>
+              <div class="settings-desc">任务临近截止时通知</div>
+            </div>
+            <div class="toggle-switch on" id="notif-toggle">
+              <div class="toggle-knob"></div>
+            </div>
+          </div>
+          <div class="settings-row">
+            <div>
+              <div class="settings-label">提前提醒时间</div>
+              <div class="settings-desc">在截止前多久提醒</div>
+            </div>
+            <select class="filter-select" id="remind-ahead" style="width:100px;">
+              <option value="15">15 分钟</option>
+              <option value="30" selected>30 分钟</option>
+              <option value="60">1 小时</option>
+              <option value="120">2 小时</option>
+              <option value="1440">1 天</option>
+            </select>
+          </div>
+          <div class="settings-row">
+            <div>
+              <div class="settings-label">逾期警报</div>
+              <div class="settings-desc">显示红色预警横幅</div>
+            </div>
+            <div class="toggle-switch on" id="overdue-alert-toggle">
+              <div class="toggle-knob"></div>
+            </div>
+          </div>
+        </div>
+        <!-- Categories -->
+        <div class="settings-section">
+          <div class="settings-section-title"><i data-lucide="tag" style="width:15px;height:15px;"></i> 类别管理</div>
+          <div id="cat-list-settings" style="display:flex;flex-direction:column;gap:6px;max-height:140px;overflow-y:auto;margin-bottom:10px;"></div>
+          <div style="display:flex;gap:8px;">
+            <input type="text" class="form-input" id="new-cat-input" placeholder="新类别名称…" style="flex:1;" />
+            <input type="color" id="new-cat-color" value="#6366f1" style="width:36px;height:36px;border:none;border-radius:8px;cursor:pointer;background:none;" />
+            <button class="btn-primary" id="add-cat-btn" style="padding:8px 14px;">
+              <i data-lucide="plus" style="width:13px;height:13px;"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-primary" id="close-settings-btn">
+        <i data-lucide="check" style="width:14px;height:14px;"></i> 保存并关闭
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Modal: Change PIN ===== -->
+<div class="modal-overlay" id="modal-pin">
+  <div class="modal-box modal-sm">
+    <div class="modal-header">
+      <div class="modal-title">修改 PIN 码</div>
+      <div class="modal-close" id="close-pin-modal"><i data-lucide="x" style="width:16px;height:16px;"></i></div>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">当前 PIN</label>
+        <input type="password" class="form-input" id="old-pin-input" placeholder="••••" maxlength="4" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">新 PIN 码</label>
+        <input type="password" class="form-input" id="new-pin-input" placeholder="••••" maxlength="4" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">确认新 PIN</label>
+        <input type="password" class="form-input" id="confirm-pin-input" placeholder="••••" maxlength="4" />
+      </div>
+      <div class="dup-warning" id="pin-change-error" style="display:none;"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" id="cancel-pin-btn">取消</button>
+      <button class="btn-primary" id="confirm-pin-change-btn">
+        <i data-lucide="shield-check" style="width:14px;height:14px;"></i> 确认修改
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Modal: Progress Update ===== -->
+<div class="modal-overlay" id="modal-progress">
+  <div class="modal-box modal-sm">
+    <div class="modal-header">
+      <div class="modal-title">更新任务进度</div>
+      <div class="modal-close" id="close-progress-modal"><i data-lucide="x" style="width:16px;height:16px;"></i></div>
+    </div>
+    <div class="modal-body">
+      <div id="prog-task-name" style="font-size:14px;font-weight:600;color:var(--text-primary);margin-bottom:14px;"></div>
+      <label class="form-label">进度 <span id="prog-update-val" style="color:var(--accent);font-weight:700;">0%</span></label>
+      <input type="range" id="progress-update-slider" min="0" max="100" value="0" style="width:100%;accent-color:var(--accent);" />
+      <input type="hidden" id="progress-update-task-id" />
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" id="cancel-progress-btn">取消</button>
+      <button class="btn-primary" id="confirm-progress-btn">
+        <i data-lucide="save" style="width:14px;height:14px;"></i> 保存进度
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Main Script ===== -->
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+
+  // =====================================================
+  // STATE
+  // =====================================================
+  const STORAGE_KEY = 'taskflow_data_v3';
+  const PIN_KEY = 'taskflow_pin';
+  const SETTINGS_KEY = 'taskflow_settings';
+
+  let state = {
+    tasks: [],
+    categories: [
+      { id: 'work',     name: '工作', color: '#6366f1' },
+      { id: 'study',    name: '学习', color: '#0ea5e9' },
+      { id: 'personal', name: '个人', color: '#ec4899' },
+      { id: 'health',   name: '健康', color: '#22c55e' },
+      { id: 'finance',  name: '财务', color: '#f59e0b' },
+    ],
+    settings: {
+      theme: 'light',
+      layout: 'grid',
+      cardStyle: 'default',
+      progressDisplay: 'both',
+      pinEnabled: true,
+      notifEnabled: true,
+      overdueAlert: true,
+      remindAhead: 30,
+    },
+    pin: '1234',
+    selectedTasks: new Set(),
+    batchMode: false,
+    filters: { search: '', cat: '', cycle: '', priority: '' },
+    activeNav: 'all',
+    contextTaskId: null,
+    countdownTimers: {},
+    reminderTimers: [],
+    toastId: 0,
+  };
+
+  // =====================================================
+  // PERSISTENCE (offline cache via localStorage)
+  // =====================================================
+  function loadState() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        const saved = JSON.parse(raw);
+        if (saved.tasks) state.tasks = saved.tasks;
+        if (saved.categories) state.categories = saved.categories;
+      }
+      const pin = localStorage.getItem(PIN_KEY);
+      if (pin) state.pin = pin;
+      const sraw = localStorage.getItem(SETTINGS_KEY);
+      if (sraw) {
+        const ss = JSON.parse(sraw);
+        Object.assign(state.settings, ss);
+      }
+    } catch(e) { /* ignore */ }
+  }
+
+  function saveState() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({
+        tasks: state.tasks, categories: state.categories
+      }));
+      localStorage.setItem(PIN_KEY, state.pin);
+      localStorage.setItem(SETTINGS_KEY, JSON.stringify(state.settings));
+    } catch(e) { /* ignore */ }
+  }
+
+  loadState();
+
+  // Seed demo data if empty
+  if (state.tasks.length === 0) {
+    const now = new Date();
+    const fmt = (d) => d.toISOString().slice(0,16);
+    const d = (n) => { const x = new Date(now); x.setDate(x.getDate()+n); return x; };
+    state.tasks = [
+      { id:'t1', title:'完成Q4季度报告', desc:'整理数据并制作PPT演示文稿', cat:'work', priority:'critical', deadline: fmt(d(0)), reminder: fmt(d(0)), progress:65, done:false, cycle:'none', createdAt: now.toISOString() },
+      { id:'t2', title:'阅读《深度工作》第三章', desc:'做读书笔记，提炼核心观点', cat:'study', priority:'medium', deadline: fmt(d(2)), reminder: fmt(d(1)), progress:30, done:false, cycle:'none', createdAt: now.toISOString() },
+      { id:'t3', title:'每日晨跑 5km', desc:'保持健康习惯', cat:'health', priority:'low', deadline: fmt(d(0)), reminder: '', progress:0, done:false, cycle:'daily', createdAt: now.toISOString() },
+      { id:'t4', title:'审核项目合同条款', desc:'重点核查第5、8、11条款', cat:'finance', priority:'high', deadline: fmt(d(-1)), reminder: '', progress:80, done:false, cycle:'none', createdAt: now.toISOString() },
+      { id:'t5', title:'准备团队周会议程', desc:'收集各组进展，整理议题', cat:'work', priority:'high', deadline: fmt(d(1)), reminder: fmt(d(1)), progress:40, done:false, cycle:'weekly', createdAt: now.toISOString() },
+      { id:'t6', title:'更新个人知识库', desc:'将本周学习内容归档至 Notion', cat:'personal', priority:'low', deadline: fmt(d(3)), reminder: '', progress:10, done:true, cycle:'none', createdAt: now.toISOString() },
+      { id:'t7', title:'系统性能优化方案', desc:'分析慢查询，制定索引策略', cat:'work', priority:'medium', deadline: fmt(d(5)), reminder: '', progress:0, done:false, cycle:'none', createdAt: now.toISOString() },
+      { id:'t8', title:'月度家庭预算规划', desc:'记录收支，制定下月预算', cat:'finance', priority:'medium', deadline: fmt(d(7)), reminder: '', progress:50, done:false, cycle:'monthly', createdAt: now.toISOString() },
+    ];
+    saveState();
+  }
+
+  // =====================================================
+  // UTILITIES
+  // =====================================================
+  function genId() { return 't' + Date.now() + Math.random().toString(36).slice(2,6); }
+  function genCatId() { return 'c' + Date.now() + Math.random().toString(36).slice(2,5); }
+
+  function getPriorityLabel(p) {
+    return { critical:'🔴 紧急', high:'🟠 高', medium:'🟡 中', low:'🟢 低' }[p] || p;
+  }
+  function getPriorityTagClass(p) {
+    return { critical:'tag-priority-critical', high:'tag-priority-high', medium:'tag-priority-medium', low:'tag-priority-low' }[p] || '';
+  }
+  function getCatById(id) { return state.categories.find(c => c.id === id); }
+
+  function isToday(dateStr) {
+    if (!dateStr) return false;
+    const d = new Date(dateStr);
+    const t = new Date();
+    return d.getFullYear()===t.getFullYear() && d.getMonth()===t.getMonth() && d.getDate()===t.getDate();
+  }
+  function isThisWeek(dateStr) {
+    if (!dateStr) return false;
+    const d = new Date(dateStr);
+    const now = new Date();
+    const start = new Date(now); start.setDate(now.getDate() - now.getDay());
+    const end = new Date(start); end.setDate(start.getDate() + 6);
+    start.setHours(0,0,0,0); end.setHours(23,59,59,999);
+    return d >= start && d <= end;
+  }
+  function isThisMonth(dateStr) {
+    if (!dateStr) return false;
+    const d = new Date(dateStr);
+    const t = new Date();
+    return d.getFullYear()===t.getFullYear() && d.getMonth()===t.getMonth();
+  }
+  function isOverdue(task) {
+    if (!task.deadline || task.done) return false;
+    return new Date(task.deadline) < new Date();
+  }
+  function getCountdownText(deadline) {
+    const diff = new Date(deadline) - new Date();
+    if (diff < 0) return { text: '已逾期', cls: 'countdown-chip' };
+    const h = Math.floor(diff / 3600000);
+    const m = Math.floor((diff % 3600000) / 60000);
+    if (h < 2) return { text: h + 'h ' + m + 'm 后到期', cls: 'countdown-chip' };
+    if (h < 24) return { text: h + ' 小时后到期', cls: 'countdown-chip warn' };
+    const days = Math.floor(h / 24);
+    if (days <= 3) return { text: days + ' 天后到期', cls: 'countdown-chip warn' };
+    return null;
+  }
+  function formatDeadline(dl) {
+    if (!dl) return '';
+    const d = new Date(dl);
+    return d.getFullYear() + '/' + String(d.getMonth()+1).padStart(2,'0') + '/' + String(d.getDate()).padStart(2,'0') + ' ' + String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0');
+  }
+
+  // Duplicate check: same title + same date
+  function isDuplicate(title, deadlineStr, excludeId) {
+    const titleNorm = title.trim().toLowerCase();
+    const date = deadlineStr ? new Date(deadlineStr).toDateString() : '__none__';
+    return state.tasks.some(t => {
+      if (t.id === excludeId) return false;
+      const tDate = t.deadline ? new Date(t.deadline).toDateString() : '__none__';
+      return t.title.trim().toLowerCase() === titleNorm && tDate === date;
+    });
+  }
+
+  // =====================================================
+  // TOAST
+  // =====================================================
+  function showToast(msg, type = 'success') {
+    const id = 'toast-' + (++state.toastId);
+    const icons = { success:'check-circle', error:'alert-circle', warn:'alert-triangle', info:'info' };
+    const icon = icons[type] || 'info';
+    const el = document.createElement('div');
+    el.className = 'toast toast-' + type;
+    el.id = id;
+    el.innerHTML =
+      '<div class="toast-icon"><i data-lucide="' + icon + '" style="width:14px;height:14px;"></i></div>' +
+      '<span class="toast-text">' + msg + '</span>' +
+      '<span class="toast-close" data-toast-id="' + id + '">✕</span>';
+    document.getElementById('toast-container').appendChild(el);
+    lucide.createIcons({ el });
+    const timer = setTimeout(() => removeToast(id), 3500);
+    el._timer = timer;
+  }
+  function removeToast(id) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    clearTimeout(el._timer);
+    el.classList.add('removing');
+    setTimeout(() => el.remove(), 300);
+  }
+
+  // =====================================================
+  // THEME
+  // =====================================================
+  function applyTheme(t) {
+    document.documentElement.removeAttribute('data-theme');
+    if (t === 'dark') document.documentElement.setAttribute('data-theme','dark');
+    else if (t === 'eye') document.documentElement.setAttribute('data-theme','eye');
+    document.querySelectorAll('.theme-option').forEach(o => o.classList.remove('active'));
+    const map = { light:'theme-light', dark:'theme-dark', eye:'theme-eye' };
+    const el = document.getElementById(map[t]);
+    if (el) el.classList.add('active');
+    state.settings.theme = t;
+    saveState();
+  }
+  applyTheme(state.settings.theme);
+
+  // =====================================================
+  // LAYOUT
+  // =====================================================
+  function applyLayout(l) {
+    state.settings.layout = l;
+    const grid = document.getElementById('task-grid');
+    if (l === 'grid') {
+      grid.className = 'task-grid';
+    } else {
+      grid.className = 'task-list';
+    }
+    document.querySelectorAll('.layout-option').forEach(o => o.classList.remove('active'));
+    const map = { grid:'layout-grid-btn', list:'layout-list-btn' };
+    const el = document.getElementById(map[l]);
+    if (el) el.classList.add('active');
+    saveState();
+    renderTasks();
+  }
+
+  // =====================================================
+  // CARD STYLE
+  // =====================================================
+  function applyCardStyle(cs) {
+    state.settings.cardStyle = cs;
+    document.querySelectorAll('.card-style-opt').forEach(o => o.classList.remove('active'));
+    const el = document.getElementById('cs-' + cs);
+    if (el) el.classList.add('active');
+    saveState();
+    renderTasks();
+  }
+
+  // =====================================================
+  // PROGRESS DISPLAY
+  // =====================================================
+  function applyProgDisplay(pd) {
+    state.settings.progressDisplay = pd;
+    document.querySelectorAll('#prog-both-btn,#prog-bar-btn,#prog-pct-btn').forEach(o => o.classList.remove('active'));
+    const map = { both:'prog-both-btn', bar:'prog-bar-btn', pct:'prog-pct-btn' };
+    const el = document.getElementById(map[pd]);
+    if (el) el.classList.add('active');
+    saveState();
+    renderTasks();
+  }
+
+  // =====================================================
+  // PIN LOCK
+  // =====================================================
+  let pinBuffer = '';
+  const CORRECT_PIN = () => state.pin;
+
+  function updatePinDots() {
+    for (let i = 0; i < 4; i++) {
+      const dot = document.getElementById('pd' + i);
+      if (dot) dot.classList.toggle('filled', i < pinBuffer.length);
+    }
+  }
+
+  function tryPin() {
+    if (pinBuffer === CORRECT_PIN()) {
+      document.getElementById('lock-screen').classList.remove('active');
+      document.getElementById('pin-error').textContent = '';
+      pinBuffer = '';
+      updatePinDots();
+      showToast('解锁成功，欢迎回来！', 'success');
+    } else {
+      document.getElementById('pin-error').textContent = 'PIN 码错误，请重试';
+      pinBuffer = '';
+      updatePinDots();
+      setTimeout(() => { document.getElementById('pin-error').textContent = ''; }, 1500);
+    }
+  }
+
+  // Register PIN key handlers in clickActions (done below)
+
+  // =====================================================
+  // FILTERS & SEARCH
+  // =====================================================
+  function getFilteredTasks() {
+    let tasks = [...state.tasks];
+
+    // nav filter
+    if (state.activeNav === 'today') {
+      tasks = tasks.filter(t => isToday(t.deadline));
+    } else if (state.activeNav === 'week') {
+      tasks = tasks.filter(t => isThisWeek(t.deadline));
+    } else if (state.activeNav === 'overdue') {
+      tasks = tasks.filter(t => isOverdue(t));
+    } else if (state.activeNav === 'done') {
+      tasks = tasks.filter(t => t.done);
+    } else if (state.activeNav.startsWith('p-')) {
+      const p = state.activeNav.replace('p-','');
+      tasks = tasks.filter(t => t.priority === p);
+    } else if (state.activeNav.startsWith('cat-')) {
+      const catId = state.activeNav.replace('cat-','');
+      tasks = tasks.filter(t => t.cat === catId);
+    }
+
+    // toolbar filters
+    const { search, cat, cycle, priority } = state.filters;
+    if (search) {
+      const q = search.toLowerCase();
+      tasks = tasks.filter(t => t.title.toLowerCase().includes(q) || (t.desc||'').toLowerCase().includes(q));
+    }
+    if (cat) tasks = tasks.filter(t => t.cat === cat);
+    if (priority) tasks = tasks.filter(t => t.priority === priority);
+    if (cycle === 'today') tasks = tasks.filter(t => isToday(t.deadline));
+    else if (cycle === 'week') tasks = tasks.filter(t => isThisWeek(t.deadline));
+    else if (cycle === 'month') tasks = tasks.filter(t => isThisMonth(t.deadline));
+    else if (cycle === 'overdue') tasks = tasks.filter(t => isOverdue(t));
+
+    // sort: priority order, then overdue first
+    const po = { critical:0, high:1, medium:2, low:3 };
+    tasks.sort((a,b) => {
+      if (isOverdue(a) !== isOverdue(b)) return isOverdue(a) ? -1 : 1;
+      if (a.done !== b.done) return a.done ? 1 : -1;
+      return (po[a.priority]||2) - (po[b.priority]||2);
+    });
+
+    return tasks;
+  }
+
+  // =====================================================
+  // RENDER TASKS
+  // =====================================================
+  function buildProgressHTML(progress) {
+    const pd = state.settings.progressDisplay;
+    if (pd === 'bar') {
+      return '<div class="task-progress-row"><div class="task-progress-bar"><div class="task-progress-fill" style="width:' + progress + '%"></div></div></div>';
+    } else if (pd === 'pct') {
+      return '<div class="task-progress-row"><span class="task-progress-pct">' + progress + '%</span></div>';
+    } else {
+      return '<div class="task-progress-row"><div class="task-progress-bar"><div class="task-progress-fill" style="width:' + progress + '%"></div></div><span class="task-progress-pct">' + progress + '%</span></div>';
+    }
+  }
+
+  function buildTaskCardHTML(task, isListView) {
+    const cat = getCatById(task.cat);
+    const catName = cat ? cat.name : '未分类';
+    const catColor = cat ? cat.color : '#94a3b8';
+    const overdue = isOverdue(task);
+    const priorityTag = '<span class="tag ' + getPriorityTagClass(task.priority) + '">' + getPriorityLabel(task.priority) + '</span>';
+    const catTag = '<span class="tag tag-cat" style="background:' + catColor + '22;color:' + catColor + ';">' + catName + '</span>';
+
+    let deadlineTag = '';
+    if (task.deadline) {
+      if (overdue) {
+        deadlineTag = '<span class="tag tag-deadline overdue"><i data-lucide="alert-circle" style="width:10px;height:10px;"></i> 已逾期</span>';
+      } else {
+        deadlineTag = '<span class="tag tag-deadline"><i data-lucide="clock" style="width:10px;height:10px;"></i> ' + formatDeadline(task.deadline) + '</span>';
+      }
+    }
+
+    let countdownHTML = '';
+    if (task.deadline && !task.done) {
+      const cd = getCountdownText(task.deadline);
+      if (cd) {
+        countdownHTML = '<span class="' + cd.cls + '"><i data-lucide="timer" style="width:10px;height:10px;"></i>' + cd.text + '</span>';
+      }
+    }
+
+    let cycleTag = '';
+    if (task.cycle && task.cycle !== 'none') {
+      const cyMap = { daily:'每日', weekly:'每周', monthly:'每月' };
+      cycleTag = '<span class="tag" style="background:var(--bg-primary);color:var(--text-muted);border:1px solid var(--border-color);"><i data-lucide="repeat" style="width:10px;height:10px;"></i> ' + (cyMap[task.cycle]||task.cycle) + '</span>';
+    }
+
+    const progressHTML = buildProgressHTML(task.progress || 0);
+    const selectedCls = state.selectedTasks.has(task.id) ? ' selected' : '';
+    const doneCls = task.done ? ' completed' : '';
+    const checkCls = task.done ? ' checked' : '';
+    const cardPad = state.settings.cardStyle === 'compact' ? 'padding:10px 12px;' : state.settings.cardStyle === 'spacious' ? 'padding:20px;' : '';
+
+    if (isListView) {
+      return '<div class="task-card list-view priority-' + task.priority + doneCls + selectedCls + '" id="card-' + task.id + '" data-task-id="' + task.id + '" style="' + cardPad + '">' +
+        (state.batchMode ? '<div class="task-checkbox' + checkCls + '" data-check="' + task.id + '"><i data-lucide="check" style="width:10px;height:10px;color:#fff;"></i></div>' : '') +
+        '<div class="task-checkbox' + (task.done?' checked':'') + '" data-complete="' + task.id + '">' +
+          (task.done ? '<i data-lucide="check" style="width:10px;height:10px;color:#fff;"></i>' : '') +
+        '</div>' +
+        '<div class="list-main">' +
+          '<div class="task-title">' + escHtml(task.title) + '</div>' +
+        '</div>' +
+        '<div class="task-meta" style="margin-bottom:0;">' + catTag + priorityTag + deadlineTag + countdownHTML + cycleTag + '</div>' +
+        '<div class="list-right">' +
+          (buildProgressHTML(task.progress||0)) +
+          '<button class="task-more" data-ctx="' + task.id + '"><i data-lucide="more-horizontal" style="width:15px;height:15px;"></i></button>' +
+        '</div>' +
+      '</div>';
+    }
+
+    return '<div class="task-card priority-' + task.priority + doneCls + selectedCls + '" id="card-' + task.id + '" data-task-id="' + task.id + '" style="' + cardPad + '">' +
+      '<div class="task-card-header">' +
+        (state.batchMode ? '<div class="task-checkbox' + (state.selectedTasks.has(task.id)?' checked':'') + '" data-check="' + task.id + '"><i data-lucide="check" style="width:10px;height:10px;color:#fff;"></i></div>' : '') +
+        (!state.batchMode ? '<div class="task-checkbox' + checkCls + '" data-complete="' + task.id + '">' + (task.done ? '<i data-lucide="check" style="width:10px;height:10px;color:#fff;"></i>' : '') + '</div>' : '') +
+        '<span class="task-title">' + escHtml(task.title) + '</span>' +
+        '<button class="task-more" data-ctx="' + task.id + '"><i data-lucide="more-horizontal" style="width:15px;height:15px;"></i></button>' +
+      '</div>' +
+      (task.desc ? '<div class="task-desc">' + escHtml(task.desc) + '</div>' : '') +
+      '<div class="task-meta">' + catTag + priorityTag + deadlineTag + cycleTag + '</div>' +
+      (countdownHTML ? '<div style="margin-bottom:8px;">' + countdownHTML + '</div>' : '') +
+      progressHTML +
+      '<div class="task-footer">' +
+        '<div class="task-assignee"><i data-lucide="calendar-check" style="width:12px;height:12px;"></i>' + (task.deadline ? formatDeadline(task.deadline) : '无截止') + '</div>' +
+        (task.done ? '<span class="tag" style="background:#f0fdf4;color:#16a34a;font-size:10px;">✓ 已完成</span>' : '') +
+      '</div>' +
+    '</div>';
+  }
+
+  function escHtml(str) {
+    return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  function renderTasks() {
+    const tasks = getFilteredTasks();
+    const grid = document.getElementById('task-grid');
+    const isListView = state.settings.layout === 'list';
+
+    if (tasks.length === 0) {
+      grid.innerHTML = '<div class="empty-state" style="grid-column:1/-1;">' +
+        '<div class="empty-icon"><i data-lucide="inbox" style="width:28px;height:28px;"></i></div>' +
+        '<div class="empty-title">暂无任务</div>' +
+        '<div class="empty-sub">当前筛选条件下没有找到任务，点击「新建任务」开始添加</div>' +
+      '</div>';
+    } else {
+      grid.innerHTML = tasks.map(t => buildTaskCardHTML(t, isListView)).join('');
+    }
+
+    lucide.createIcons();
+    updateStats();
+    updateBadges();
+    updateAlerts();
+    updateNavProgress();
+    scheduleReminders();
+  }
+
+  // =====================================================
+  // STATS
+  // =====================================================
+  function updateStats() {
+    const all = state.tasks;
+    const total = all.length;
+    const done = all.filter(t => t.done).length;
+    const inprog = all.filter(t => !t.done && (t.progress||0) > 0).length;
+    const overdue = all.filter(t => isOverdue(t)).length;
+    const rate = total ? Math.round(done / total * 100) : 0;
+
+    document.getElementById('s-total').textContent = total;
+    document.getElementById('s-progress').textContent = inprog;
+    document.getElementById('s-done').textContent = done;
+    document.getElementById('s-overdue').textContent = overdue;
+    document.getElementById('s-rate').textContent = rate + '%';
+    document.getElementById('sf-progress').style.width = total ? (inprog/total*100)+'%' : '0%';
+    document.getElementById('sf-done').style.width = total ? (done/total*100)+'%' : '0%';
+    document.getElementById('sf-overdue').style.width = total ? (overdue/total*100)+'%' : '0%';
+    document.getElementById('sf-rate').style.width = rate + '%';
+  }
+
+  function updateNavProgress() {
+    const all = state.tasks;
+    const total = all.length;
+    const done = all.filter(t => t.done).length;
+    const rate = total ? Math.round(done/total*100) : 0;
+    document.getElementById('nav-prog-fill').style.width = rate + '%';
+    document.getElementById('nav-prog-pct').textContent = rate + '%';
+
+    // Week rate
+    const weekTasks = all.filter(t => isThisWeek(t.deadline));
+    const weekDone = weekTasks.filter(t => t.done).length;
+    const wr = weekTasks.length ? Math.round(weekDone/weekTasks.length*100) : 0;
+    document.getElementById('week-rate').textContent = wr + '%';
+    document.getElementById('week-rate-fill').style.width = wr + '%';
+  }
+
+  function updateBadges() {
+    const all = state.tasks;
+    const set = (id, val) => { const el = document.getElementById(id); if(el) el.textContent = val; };
+    set('badge-all', all.length);
+    set('badge-today', all.filter(t => isToday(t.deadline)).length);
+    set('badge-week', all.filter(t => isThisWeek(t.deadline)).length);
+    set('badge-overdue', all.filter(t => isOverdue(t)).length);
+    set('badge-done', all.filter(t => t.done).length);
+    set('badge-critical', all.filter(t => t.priority==='critical').length);
+    set('badge-high', all.filter(t => t.priority==='high').length);
+    set('badge-medium', all.filter(t => t.priority==='medium').length);
+    set('badge-low', all.filter(t => t.priority==='low').length);
+  }
+
+  function updateAlerts() {
+    if (!state.settings.overdueAlert) { document.getElementById('alert-area').innerHTML = ''; return; }
+    const overdue = state.tasks.filter(t => isOverdue(t) && !t.done);
+    const urgent = state.tasks.filter(t => {
+      if (!t.deadline || t.done) return false;
+      const diff = new Date(t.deadline) - new Date();
+      return diff > 0 && diff < 2 * 3600000;
+    });
+    let html = '';
+    if (overdue.length > 0) {
+      html += '<div class="alert-banner alert-critical"><i data-lucide="alert-circle" style="width:16px;height:16px;flex-shrink:0;"></i> <strong>' + overdue.length + ' 个任务已逾期</strong>，请尽快处理：' + overdue.slice(0,3).map(t=>'「'+escHtml(t.title)+'」').join('、') + (overdue.length>3?'等…':'') + '</div>';
+    }
+    if (urgent.length > 0) {
+      html += '<div class="alert-banner alert-warning"><i data-lucide="alert-triangle" style="width:16px;height:16px;flex-shrink:0;"></i> <strong>' + urgent.length + ' 个任务</strong> 将在 2 小时内到期，请关注：' + urgent.slice(0,2).map(t=>'「'+escHtml(t.title)+'」').join('、') + '</div>';
+    }
+    document.getElementById('alert-area').innerHTML = html;
+    if (html) lucide.createIcons();
+
+    // notify dot
+    const notifyDot = document.getElementById('notify-dot');
+    if (notifyDot) notifyDot.style.display = (overdue.length || urgent.length) ? 'block' : 'none';
+  }
+
+  // =====================================================
+  // REMINDER TIMERS
+  // =====================================================
+  function scheduleReminders() {
+    state.reminderTimers.forEach(id => clearTimeout(id));
+    state.reminderTimers = [];
+    if (!state.settings.notifEnabled) return;
+
+    const ahead = (state.settings.remindAhead || 30) * 60 * 1000;
+    state.tasks.forEach(task => {
+      if (!task.reminder || task.done) return;
+      const remTime = new Date(task.reminder).getTime();
+      const now = Date.now();
+      const diff = remTime - now;
+      if (diff > 0 && diff < 24 * 3600000) {
+        const tid = setTimeout(() => {
+          showToast('⏰ 提醒：「' + task.title + '」即将到期！', 'warn');
+        }, diff);
+        state.reminderTimers.push(tid);
+      }
+      if (task.deadline) {
+        const dlTime = new Date(task.deadline).getTime();
+        const preDiff = dlTime - ahead - now;
+        if (preDiff > 0 && preDiff < 24 * 3600000) {
+          const tid2 = setTimeout(() => {
+            showToast('⚠️「' + task.title + '」距截止还有 ' + state.settings.remindAhead + ' 分钟！', 'warn');
+          }, preDiff);
+          state.reminderTimers.push(tid2);
+        }
+      }
+    });
+  }
+
+  // =====================================================
+  // SIDEBAR CATEGORY LIST
+  // =====================================================
+  function renderSidebarCats() {
+    const el = document.getElementById('sidebar-cats');
+    el.innerHTML = '';
+    state.categories.forEach(cat => {
+      const div = document.createElement('div');
+      div.className = 'sidebar-item' + (state.activeNav === 'cat-' + cat.id ? ' active' : '');
+      div.id = 'sn-cat-' + cat.id;
+      div.setAttribute('data-nav-cat', cat.id);
+      div.innerHTML = '<span style="width:8px;height:8px;background:' + cat.color + ';border-radius:50%;flex-shrink:0;display:inline-block;"></span> ' + escHtml(cat.name) +
+        '<span class="badge" style="background:' + cat.color + ';">' + state.tasks.filter(t=>t.cat===cat.id).length + '</span>';
+      el.appendChild(div);
+    });
+  }
+
+  // =====================================================
+  // CATEGORY SELECTS SYNC
+  // =====================================================
+  function syncCategorySelects() {
+    const ids = ['filter-cat', 'task-cat-input'];
+    ids.forEach(id => {
+      const sel = document.getElementById(id);
+      if (!sel) return;
+      const val = sel.value;
+      while (sel.options.length > 1) sel.remove(1);
+      state.categories.forEach(cat => {
+        const opt = document.createElement('option');
+        opt.value = cat.id; opt.textContent = cat.name;
+        sel.appendChild(opt);
+      });
+      sel.value = val;
+    });
+  }
+
+  // =====================================================
+  // SETTINGS PANEL - Category List
+  // =====================================================
+  function renderCatSettings() {
+    const el = document.getElementById('cat-list-settings');
+    el.innerHTML = '';
+    state.categories.forEach(cat => {
+      const row = document.createElement('div');
+      row.style.cssText = 'display:flex;align-items:center;gap:8px;padding:6px 8px;background:var(--bg-primary);border-radius:8px;';
+      row.innerHTML =
+        '<span style="width:12px;height:12px;background:' + cat.color + ';border-radius:50%;flex-shrink:0;"></span>' +
+        '<span style="flex:1;font-size:13px;color:var(--text-primary);">' + escHtml(cat.name) + '</span>' +
+        '<button data-del-cat="' + cat.id + '" style="padding:3px 8px;border-radius:6px;border:1px solid var(--border-color);background:var(--bg-card);color:var(--text-muted);font-size:11px;cursor:pointer;">删除</button>';
+      el.appendChild(row);
+    });
+  }
+
+  // =====================================================
+  // SETTINGS SYNC (apply saved settings to UI)
+  // =====================================================
+  function syncSettingsUI() {
+    applyTheme(state.settings.theme);
+    applyLayout(state.settings.layout);
+    applyCardStyle(state.settings.cardStyle);
+    applyProgDisplay(state.settings.progressDisplay);
+
+    const pinToggle = document.getElementById('pin-toggle');
+    if (pinToggle) pinToggle.classList.toggle('on', state.settings.pinEnabled);
+    const notifToggle = document.getElementById('notif-toggle');
+    if (notifToggle) notifToggle.classList.toggle('on', state.settings.notifEnabled);
+    const overdueToggle = document.getElementById('overdue-alert-toggle');
+    if (overdueToggle) overdueToggle.classList.toggle('on', state.settings.overdueAlert);
+    const remAhead = document.getElementById('remind-ahead');
+    if (remAhead) remAhead.value = state.settings.remindAhead || 30;
+  }
+
+  // =====================================================
+  // MODAL HELPERS
+  // =====================================================
+  function openModal(id) { document.getElementById(id).classList.add('open'); }
+  function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+  // =====================================================
+  // ADD / EDIT TASK
+  // =====================================================
+  function openAddModal(taskId) {
+    const isEdit = !!taskId;
+    document.getElementById('add-modal-title').textContent = isEdit ? '编辑任务' : '新建任务';
+    document.getElementById('edit-task-id').value = taskId || '';
+    document.getElementById('dup-warning').classList.remove('show');
+
+    if (isEdit) {
+      const t = state.tasks.find(x => x.id === taskId);
+      if (!t) return;
+      document.getElementById('task-title-input').value = t.title;
+      document.getElementById('task-desc-input').value = t.desc || '';
+      document.getElementById('task-cat-input').value = t.cat || '';
+      document.getElementById('task-cycle-input').value = t.cycle || 'none';
+      document.getElementById('task-deadline-input').value = t.deadline || '';
+      document.getElementById('task-reminder-input').value = t.reminder || '';
+      document.getElementById('task-progress-input').value = t.progress || 0;
+      document.getElementById('prog-val-label').textContent = (t.progress||0) + '%';
+      const radioEl = document.getElementById('pr-' + t.priority);
+      if (radioEl) radioEl.checked = true;
+    } else {
+      document.getElementById('task-title-input').value = '';
+      document.getElementById('task-desc-input').value = '';
+      document.getElementById('task-cat-input').value = '';
+      document.getElementById('task-cycle-input').value = 'none';
+      document.getElementById('task-deadline-input').value = '';
+      document.getElementById('task-reminder-input').value = '';
+      document.getElementById('task-progress-input').value = 0;
+      document.getElementById('prog-val-label').textContent = '0%';
+      document.getElementById('pr-medium').checked = true;
+    }
+    openModal('modal-add');
+    setTimeout(() => document.getElementById('task-title-input').focus(), 100);
+  }
+
+  function saveTask() {
+    const id = document.getElementById('edit-task-id').value;
+    const title = document.getElementById('task-title-input').value.trim();
+    if (!title) { showToast('请输入任务标题', 'error'); return; }
+
+    const catVal = document.getElementById('task-cat-input').value;
+    if (!catVal) { showToast('请选择类别', 'error'); return; }
+
+    const priorityEl = document.querySelector('input[name="task-priority"]:checked');
+    const priority = priorityEl ? priorityEl.value : 'medium';
+    const deadline = document.getElementById('task-deadline-input').value;
+    const reminder = document.getElementById('task-reminder-input').value;
+    const progress = parseInt(document.getElementById('task-progress-input').value) || 0;
+    const desc = document.getElementById('task-desc-input').value.trim();
+    const cycle = document.getElementById('task-cycle-input').value;
+
+    // Duplicate check
+    if (isDuplicate(title, deadline, id || null)) {
+      document.getElementById('dup-warning').classList.add('show');
+      showToast('任务重复！相同标题+日期已存在', 'error');
+      return;
+    }
+    document.getElementById('dup-warning').classList.remove('show');
+
+    if (id) {
+      const idx = state.tasks.findIndex(t => t.id === id);
+      if (idx >= 0) {
+        Object.assign(state.tasks[idx], { title, desc, cat: catVal, priority, deadline, reminder, progress, cycle });
+        showToast('任务已更新', 'success');
+      }
+    } else {
+      state.tasks.push({ id: genId(), title, desc, cat: catVal, priority, deadline, reminder, progress, done: false, cycle, createdAt: new Date().toISOString() });
+      showToast('任务已添加', 'success');
+    }
+
+    saveState();
+    closeModal('modal-add');
+    renderTasks();
+    renderSidebarCats();
+    syncCategorySelects();
+  }
+
+  // =====================================================
+  // TASK ACTIONS
+  // =====================================================
+  function toggleComplete(taskId) {
+    const t = state.tasks.find(x => x.id === taskId);
+    if (!t) return;
+    t.done = !t.done;
+    if (t.done) t.progress = 100;
+    saveState();
+    renderTasks();
+    showToast(t.done ? '任务已完成 🎉' : '任务已重新开启', t.done ? 'success' : 'info');
+  }
+
+  function deleteTask(taskId) {
+    state.tasks = state.tasks.filter(t => t.id !== taskId);
+    state.selectedTasks.delete(taskId);
+    saveState();
+    renderTasks();
+    renderSidebarCats();
+    syncCategorySelects();
+    showToast('任务已删除', 'info');
+  }
+
+  function openProgressModal(taskId) {
+    const t = state.tasks.find(x => x.id === taskId);
+    if (!t) return;
+    document.getElementById('prog-task-name').textContent = t.title;
+    document.getElementById('progress-update-slider').value = t.progress || 0;
+    document.getElementById('prog-update-val').textContent = (t.progress||0) + '%';
+    document.getElementById('progress-update-task-id').value = taskId;
+    openModal('modal-progress');
+    closeCtxMenu();
+  }
+
+  function saveProgressUpdate() {
+    const taskId = document.getElementById('progress-update-task-id').value;
+    const val = parseInt(document.getElementById('progress-update-slider').value);
+    const t = state.tasks.find(x => x.id === taskId);
+    if (!t) return;
+    t.progress = val;
+    if (val === 100) t.done = true;
+    saveState();
+    closeModal('modal-progress');
+    renderTasks();
+    showToast('进度已更新为 ' + val + '%', 'success');
+  }
+
+  // =====================================================
+  // BATCH OPERATIONS
+  // =====================================================
+  function toggleBatchMode() {
+    state.batchMode = !state.batchMode;
+    if (!state.batchMode) {
+      state.selectedTasks.clear();
+    }
+    const bar = document.getElementById('batch-bar');
+    bar.classList.toggle('visible', state.batchMode);
+    updateBatchCount();
+    renderTasks();
+  }
+
+  function updateBatchCount() {
+    const el = document.getElementById('batch-count-text');
+    if (el) el.textContent = '已选择 ' + state.selectedTasks.size + ' 项';
+  }
+
+  function toggleSelectTask(taskId) {
+    if (state.selectedTasks.has(taskId)) {
+      state.selectedTasks.delete(taskId);
+    } else {
+      state.selectedTasks.add(taskId);
+    }
+    updateBatchCount();
+    const card = document.getElementById('card-' + taskId);
+    if (card) card.classList.toggle('selected', state.selectedTasks.has(taskId));
+    const cb = card ? card.querySelector('[data-check="' + taskId + '"]') : null;
+    if (cb) cb.classList.toggle('checked', state.selectedTasks.has(taskId));
+  }
+
+  function batchSelectAll() {
+    getFilteredTasks().forEach(t => state.selectedTasks.add(t.id));
+    updateBatchCount();
+    renderTasks();
+  }
+
+  function batchMarkDone(done) {
+    if (state.selectedTasks.size === 0) { showToast('请先选择任务', 'warn'); return; }
+    state.selectedTasks.forEach(id => {
+      const t = state.tasks.find(x => x.id === id);
+      if (t) { t.done = done; if (done) t.progress = 100; }
+    });
+    saveState();
+    state.selectedTasks.clear();
+    updateBatchCount();
+    renderTasks();
+    showToast(done ? '已批量标记完成' : '已批量标记未完成', 'success');
+  }
+
+  function batchDelete() {
+    if (state.selectedTasks.size === 0) { showToast('请先选择任务', 'warn'); return; }
+    const cnt = state.selectedTasks.size;
+    state.tasks = state.tasks.filter(t => !state.selectedTasks.has(t.id));
+    state.selectedTasks.clear();
+    saveState();
+    updateBatchCount();
+    renderTasks();
+    renderSidebarCats();
+    syncCategorySelects();
+    showToast('已删除 ' + cnt + ' 个任务', 'info');
+  }
+
+  // =====================================================
+  // CONTEXT MENU
+  // =====================================================
+  function openCtxMenu(taskId, x, y) {
+    state.contextTaskId = taskId;
+    const menu = document.getElementById('ctx-menu');
+    menu.style.left = x + 'px';
+    menu.style.top = y + 'px';
+    menu.classList.add('open');
+    lucide.createIcons();
+  }
+  function closeCtxMenu() {
+    document.getElementById('ctx-menu').classList.remove('open');
+    state.contextTaskId = null;
+  }
+
+  // =====================================================
+  // CATEGORY MANAGEMENT
+  // =====================================================
+  function addCategory() {
+    const nameEl = document.getElementById('new-cat-input');
+    const colorEl = document.getElementById('new-cat-color');
+    const name = nameEl.value.trim();
+    if (!name) { showToast('请输入类别名称', 'error'); return; }
+    if (state.categories.find(c => c.name.toLowerCase() === name.toLowerCase())) {
+      showToast('类别名称已存在', 'error'); return;
+    }
+    state.categories.push({ id: genCatId(), name, color: colorEl.value });
+    nameEl.value = '';
+    saveState();
+    syncCategorySelects();
+    renderSidebarCats();
+    renderCatSettings();
+    showToast('类别「' + name + '」已添加', 'success');
+  }
+
+  function deleteCategory(catId) {
+    const cat = state.categories.find(c => c.id === catId);
+    if (!cat) return;
+    if (state.tasks.some(t => t.cat === catId)) {
+      showToast('该类别下还有任务，无法删除', 'error'); return;
+    }
+    state.categories = state.categories.filter(c => c.id !== catId);
+    saveState();
+    syncCategorySelects();
+    renderSidebarCats();
+    renderCatSettings();
+    showToast('类别已删除', 'info');
+  }
+
+  // =====================================================
+  // NAV
+  // =====================================================
+  function setActiveNav(nav) {
+    state.activeNav = nav;
+    document.querySelectorAll('.sidebar-item').forEach(el => el.classList.remove('active'));
+    const el = document.getElementById('sn-' + nav) || document.getElementById('sn-cat-' + nav.replace('cat-',''));
+    if (el) el.classList.add('active');
+    renderTasks();
+  }
+
+  // =====================================================
+  // CLICK ACTIONS (Central delegation)
+  // =====================================================
+  const clickActions = {
+    // Lock
+    'btn-lock': () => { document.getElementById('lock-screen').classList.add('active'); pinBuffer = ''; updatePinDots(); },
+
+    // PIN Keys
+    'pk1': () => { if(pinBuffer.length<4){pinBuffer+='1';updatePinDots();if(pinBuffer.length===4)tryPin();} },
+    'pk2': () => { if(pinBuffer.length<4){pinBuffer+='2';updatePinDots();if(pinBuffer.length===4)tryPin();} },
+    'pk3': () => { if(pinBuffer.length<4){pinBuffer+='3';updatePinDots();if(pinBuffer.length===4)tryPin();} },
+    'pk4': () => { if(pinBuffer.length<4){pinBuffer+='4';updatePinDots();if(pinBuffer.length===4)tryPin();} },
+    'pk5': () => { if(pinBuffer.length<4){pinBuffer+='5';updatePinDots();if(pinBuffer.length===4)tryPin();} },
+    'pk6': () => { if(pinBuffer.length<4){pinBuffer+='6';updatePinDots();if(pinBuffer.length===4)tryPin();} },
+    'pk7': () => { if(pinBuffer.length<4){pinBuffer+='7';updatePinDots();if(pinBuffer.length===4)tryPin();} },
+    'pk8': () => { if(pinBuffer.length<4){pinBuffer+='8';updatePinDots();if(pinBuffer.length===4)tryPin();} },
+    'pk9': () => { if(pinBuffer.length<4){pinBuffer+='9';updatePinDots();if(pinBuffer.length===4)tryPin();} },
+    'pk0': () => { if(pinBuffer.length<4){pinBuffer+='0';updatePinDots();if(pinBuffer.length===4)tryPin();} },
+    'pk-del': () => { pinBuffer = pinBuffer.slice(0,-1); updatePinDots(); },
+    'pk-clear': () => { pinBuffer = ''; updatePinDots(); },
+
+    // Nav
+    'btn-open-add': () => openAddModal(null),
+    'btn-open-settings': () => { syncSettingsUI(); renderCatSettings(); openModal('modal-settings'); },
+    'btn-notify-bell': () => {
+      const overdue = state.tasks.filter(t=>isOverdue(t)&&!t.done);
+      if (overdue.length) showToast('有 ' + overdue.length + ' 个任务已逾期！', 'warn');
+      else showToast('暂无待处理提醒', 'info');
+    },
+
+    // Add Task Modal
+    'close-add-modal': () => closeModal('modal-add'),
+    'cancel-add-btn': () => closeModal('modal-add'),
+    'confirm-add-btn': () => saveTask(),
+
+    // Settings Modal
+    'close-settings-modal': () => { saveState(); closeModal('modal-settings'); },
+    'close-settings-btn': () => { saveState(); closeModal('modal-settings'); },
+
+    // Theme
+    'theme-light': () => applyTheme('light'),
+    'theme-dark': () => applyTheme('dark'),
+    'theme-eye': () => applyTheme('eye'),
+
+    // Layout (in settings)
+    'layout-grid-btn': () => applyLayout('grid'),
+    'layout-list-btn': () => applyLayout('list'),
+    // Layout (in toolbar)
+    'btn-layout-grid': () => applyLayout('grid'),
+    'btn-layout-list': () => applyLayout('list'),
+
+    // Card style
+    'cs-default': () => applyCardStyle('default'),
+    'cs-compact': () => applyCardStyle('compact'),
+    'cs-spacious': () => applyCardStyle('spacious'),
+
+    // Progress display
+    'prog-both-btn': () => applyProgDisplay('both'),
+    'prog-bar-btn': () => applyProgDisplay('bar'),
+    'prog-pct-btn': () => applyProgDisplay('pct'),
+
+    // PIN Toggle
+    'pin-toggle': () => {
+      state.settings.pinEnabled = !state.settings.pinEnabled;
+      document.getElementById('pin-toggle').classList.toggle('on', state.settings.pinEnabled);
+      saveState();
+    },
+    'notif-toggle': () => {
+      state.settings.notifEnabled = !state.settings.notifEnabled;
+      document.getElementById('notif-toggle').classList.toggle('on', state.settings.notifEnabled);
+      saveState(); scheduleReminders();
+    },
+    'overdue-alert-toggle': () => {
+      state.settings.overdueAlert = !state.settings.overdueAlert;
+      document.getElementById('overdue-alert-toggle').classList.toggle('on', state.settings.overdueAlert);
+      saveState(); updateAlerts();
+    },
+
+    // Change PIN
+    'btn-change-pin': () => { closeModal('modal-settings'); openModal('modal-pin'); },
+    'close-pin-modal': () => closeModal('modal-pin'),
+    'cancel-pin-btn': () => closeModal('modal-pin'),
+    'confirm-pin-change-btn': () => {
+      const old = document.getElementById('old-pin-input').value;
+      const nw = document.getElementById('new-pin-input').value;
+      const cf = document.getElementById('confirm-pin-input').value;
+      const errEl = document.getElementById('pin-change-error');
+      if (old !== state.pin) { errEl.textContent = '当前 PIN 码错误'; errEl.style.display='block'; return; }
+      if (nw.length !== 4) { errEl.textContent = 'PIN 码必须为 4 位'; errEl.style.display='block'; return; }
+      if (nw !== cf) { errEl.textContent = '两次输入不一致'; errEl.style.display='block'; return; }
+      state.pin = nw; saveState();
+      errEl.style.display = 'none';
+      closeModal('modal-pin');
+      showToast('PIN 码已修改', 'success');
+    },
+
+    // Progress Modal
+    'close-progress-modal': () => closeModal('modal-progress'),
+    'cancel-progress-btn': () => closeModal('modal-progress'),
+    'confirm-progress-btn': () => saveProgressUpdate(),
+
+    // Batch
+    'btn-batch-select': () => toggleBatchMode(),
+    'batch-select-all': () => batchSelectAll(),
+    'batch-done': () => batchMarkDone(true),
+    'batch-undone': () => batchMarkDone(false),
+    'batch-delete': () => batchDelete(),
+    'batch-cancel': () => { state.batchMode = false; state.selectedTasks.clear(); document.getElementById('batch-bar').classList.remove('visible'); renderTasks(); },
+
+    // Sidebar Nav
+    'sn-all': () => setActiveNav('all'),
+    'sn-today': () => setActiveNav('today'),
+    'sn-week': () => setActiveNav('week'),
+    'sn-overdue': () => setActiveNav('overdue'),
+    'sn-done': () => setActiveNav('done'),
+    'sn-p-critical': () => setActiveNav('p-critical'),
+    'sn-p-high': () => setActiveNav('p-high'),
+    'sn-p-medium': () => setActiveNav('p-medium'),
+    'sn-p-low': () => setActiveNav('p-low'),
+
+    // Context Menu
+    'ctx-edit': () => { if(state.contextTaskId){ openAddModal(state.contextTaskId); closeCtxMenu(); }},
+    'ctx-complete': () => { if(state.contextTaskId){ toggleComplete(state.contextTaskId); closeCtxMenu(); }},
+    'ctx-progress': () => { if(state.contextTaskId) openProgressModal(state.contextTaskId); },
+    'ctx-delete': () => { if(state.contextTaskId){ deleteTask(state.contextTaskId); closeCtxMenu(); }},
+
+    // Add Category
+    'add-cat-btn': () => addCategory(),
+  };
+
+  // Single global delegation
+  document.addEventListener('click', (e) => {
+    // Close context menu on outside click
+    const ctxMenu = document.getElementById('ctx-menu');
+    if (!ctxMenu.contains(e.target)) closeCtxMenu();
+
+    // Context menu trigger (more button)
+    const ctxBtn = e.target.closest('[data-ctx]');
+    if (ctxBtn) {
+      e.stopPropagation();
+      const rect = ctxBtn.getBoundingClientRect();
+      openCtxMenu(ctxBtn.getAttribute('data-ctx'), rect.left - 100, rect.bottom + 4);
+      return;
+    }
+
+    // Complete checkbox (non-batch)
+    const completeBtn = e.target.closest('[data-complete]');
+    if (completeBtn && !state.batchMode) {
+      toggleComplete(completeBtn.getAttribute('data-complete'));
+      return;
+    }
+
+    // Batch checkbox
+    const checkBtn = e.target.closest('[data-check]');
+    if (checkBtn && state.batchMode) {
+      toggleSelectTask(checkBtn.getAttribute('data-check'));
+      return;
+    }
+
+    // Delete category
+    const delCat = e.target.closest('[data-del-cat]');
+    if (delCat) { deleteCategory(delCat.getAttribute('data-del-cat')); return; }
+
+    // Toast close
+    const toastClose = e.target.closest('[data-toast-id]');
+    if (toastClose) { removeToast(toastClose.getAttribute('data-toast-id')); return; }
+
+    // Sidebar dynamic category nav
+    const navCat = e.target.closest('[data-nav-cat]');
+    if (navCat) { setActiveNav('cat-' + navCat.getAttribute('data-nav-cat')); return; }
+
+    // ID-based actions
+    const el = e.target.closest('[id]');
+    if (!el) return;
+    const fn = clickActions[el.id];
+    if (fn) fn(e, el);
+  });
+
+  // =====================================================
+  // RANGE INPUT LISTENERS
+  // =====================================================
+  document.getElementById('task-progress-input').addEventListener('input', function() {
+    document.getElementById('prog-val-label').textContent = this.value + '%';
+  });
+  document.getElementById('progress-update-slider').addEventListener('input', function() {
+    document.getElementById('prog-update-val').textContent = this.value + '%';
+  });
+  document.getElementById('remind-ahead').addEventListener('change', function() {
+    state.settings.remindAhead = parseInt(this.value);
+    saveState(); scheduleReminders();
+  });
+
+  // =====================================================
+  // SEARCH & FILTER LISTENERS
+  // =====================================================
+  document.getElementById('search-input').addEventListener('input', function() {
+    state.filters.search = this.value;
+    renderTasks();
+  });
+  document.getElementById('filter-cat').addEventListener('change', function() {
+    state.filters.cat = this.value;
+    renderTasks();
+  });
+  document.getElementById('filter-cycle').addEventListener('change', function() {
+    state.filters.cycle = this.value;
+    renderTasks();
+  });
+  document.getElementById('filter-priority').addEventListener('change', function() {
+    state.filters.priority = this.value;
+    renderTasks();
+  });
+
+  // Title duplicate check on input
+  document.getElementById('task-title-input').addEventListener('input', function() {
+    const title = this.value.trim();
+    const deadline = document.getElementById('task-deadline-input').value;
+    const editId = document.getElementById('edit-task-id').value;
+    if (title && isDuplicate(title, deadline, editId || null)) {
+      document.getElementById('dup-warning').classList.add('show');
+    } else {
+      document.getElementById('dup-warning').classList.remove('show');
+    }
+  });
+
+  // Close modals on overlay click
+  ['modal-add','modal-settings','modal-pin','modal-progress'].forEach(id => {
+    document.getElementById(id).addEventListener('click', function(e) {
+      if (e.target === this) this.classList.remove('open');
+    });
+  });
+
+  // Keyboard ESC
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      ['modal-add','modal-settings','modal-pin','modal-progress'].forEach(id => closeModal(id));
+      closeCtxMenu();
+    }
+  });
+
+  // =====================================================
+  // INIT
+  // =====================================================
+  syncCategorySelects();
+  renderSidebarCats();
+  syncSettingsUI();
+  renderTasks();
+
+  // Show lock if pin enabled
+  if (!state.settings.pinEnabled) {
+    document.getElementById('lock-screen').classList.remove('active');
+  }
+
+  // Auto-refresh countdowns every minute
+  const refreshInterval = setInterval(() => { renderTasks(); }, 60000);
+
+  // Cleanup on unload
+  window.addEventListener('beforeunload', () => {
+    clearInterval(refreshInterval);
+    state.reminderTimers.forEach(id => clearTimeout(id));
+  });
+
+  // Show offline cache hint
+  setTimeout(() => {
+    if (typeof localStorage !== 'undefined') {
+      showToast('✅ 离线缓存已启用，数据自动保存到本地', 'info');
+    }
+  }, 1200);
+
+});
+</script>
+
+<script>lucide.createIcons();</script>
+</body>
+</html>
