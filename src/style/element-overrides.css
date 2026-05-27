@@ -1,0 +1,137 @@
+/* ===== Element Plus Override Styles ===== */
+
+/* el-input */
+.el-input__wrapper {
+  border-radius: 9px !important;
+  background: var(--bg-primary) !important;
+  box-shadow: 0 0 0 1px var(--border-color) !important;
+  padding: 4px 12px !important;
+}
+.el-input__wrapper:hover {
+  box-shadow: 0 0 0 1px var(--accent) !important;
+}
+.el-input__wrapper.is-focus {
+  box-shadow: 0 0 0 2px var(--accent-light), 0 0 0 1px var(--accent) !important;
+}
+.el-input__inner {
+  color: var(--text-primary) !important;
+  font-family: 'Inter', sans-serif !important;
+  font-size: 13px !important;
+}
+.el-input__inner::placeholder {
+  color: var(--text-muted) !important;
+}
+.el-textarea__inner {
+  border-radius: 9px !important;
+  background: var(--bg-primary) !important;
+  border-color: var(--border-color) !important;
+  color: var(--text-primary) !important;
+  font-family: 'Inter', sans-serif !important;
+  font-size: 13px !important;
+  box-shadow: none !important;
+  resize: vertical;
+  min-height: 80px;
+}
+.el-textarea__inner:focus {
+  border-color: var(--accent) !important;
+  box-shadow: 0 0 0 3px var(--accent-light) !important;
+}
+.el-textarea__inner::placeholder {
+  color: var(--text-muted) !important;
+}
+
+/* el-select */
+.el-select .el-input__wrapper {
+  border-radius: 9px !important;
+}
+.el-select-dropdown {
+  border-radius: 10px !important;
+  border-color: var(--border-color) !important;
+  background: var(--bg-card) !important;
+  box-shadow: var(--shadow-lg) !important;
+}
+.el-select-dropdown__item {
+  color: var(--text-primary) !important;
+  font-size: 13px !important;
+  font-family: 'Inter', sans-serif !important;
+}
+.el-select-dropdown__item.is-selected {
+  color: var(--accent) !important;
+  background: var(--accent-light) !important;
+}
+.el-select-dropdown__item:hover {
+  background: var(--accent-light) !important;
+}
+
+/* el-dialog */
+.el-dialog {
+  border-radius: 16px !important;
+  background: var(--bg-card) !important;
+  box-shadow: var(--shadow-lg) !important;
+}
+.el-dialog__header {
+  padding: 20px 24px 16px !important;
+  border-bottom: 1px solid var(--border-color) !important;
+  margin-bottom: 0 !important;
+}
+.el-dialog__title {
+  font-size: 16px !important;
+  font-weight: 700 !important;
+  color: var(--text-primary) !important;
+  font-family: 'Inter', sans-serif !important;
+}
+.el-dialog__body {
+  padding: 20px 24px !important;
+  color: var(--text-primary) !important;
+}
+.el-dialog__footer {
+  padding: 16px 24px !important;
+  border-top: 1px solid var(--border-color) !important;
+}
+.el-dialog__headerbtn {
+  display: none !important;
+}
+.el-overlay {
+  background: rgba(0,0,0,0.4) !important;
+  backdrop-filter: blur(4px) !important;
+}
+
+/* el-slider */
+.el-slider__runway {
+  background: var(--border-color) !important;
+}
+.el-slider__bar {
+  background: linear-gradient(90deg, var(--accent), var(--accent-hover)) !important;
+}
+.el-slider__button {
+  border-color: var(--accent) !important;
+}
+.el-slider__button-wrapper:hover .el-slider__button,
+.el-slider__button-wrapper.dragging .el-slider__button {
+  border-color: var(--accent-hover) !important;
+}
+
+/* el-date-picker */
+.el-date-editor {
+  width: 100% !important;
+}
+.el-date-editor .el-input__wrapper {
+  width: 100% !important;
+}
+.el-picker__popper {
+  border-radius: 12px !important;
+  border-color: var(--border-color) !important;
+  background: var(--bg-card) !important;
+  box-shadow: var(--shadow-lg) !important;
+}
+.el-date-table td.today .el-date-table-cell__text {
+  color: var(--accent) !important;
+}
+.el-date-table td.current:not(.disabled) .el-date-table-cell__text {
+  background: var(--accent) !important;
+}
+
+/* scrollbar in el-select dropdown */
+.el-scrollbar__bar.is-vertical .el-scrollbar__thumb {
+  background-color: var(--border-color) !important;
+}
