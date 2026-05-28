@@ -1,12 +1,19 @@
 <template>
-  <div class="app-wrapper">
+  <div :class="isMobile ? 'm-app-root' : 'app-wrapper'">
     <LockScreen v-if="store.isLocked && store.settings.pinEnabled" />
     <template v-else>
-      <TopNav @open-settings="settingsOpen = true" @open-add="openAddModal(null)" />
-      <div class="main-layout">
-        <Sidebar />
-        <ContentArea />
-      </div>
+      <MobileLayout
+        v-if="isMobile"
+        @open-settings="settingsOpen = true"
+        @open-add="openAddModal(null)"
+      />
+      <template v-else>
+        <TopNav @open-settings="settingsOpen = true" @open-add="openAddModal(null)" />
+        <div class="main-layout">
+          <Sidebar />
+          <ContentArea />
+        </div>
+      </template>
     </template>
     <ContextMenu @edit-task="openAddModal" @progress-task="openProgressModal" />
     <ToastContainer />
@@ -22,6 +29,7 @@ import { ref, onMounted, onUnmounted, watch } from 'vue'
 import { useTaskStore } from './stores/taskStore.js'
 import { scheduleReminders, clearAllReminders } from './composables/useReminders.js'
 import { toastService } from './composables/useToast.js'
+import { useDevice } from './composables/useDevice.js'
 import LockScreen from './components/LockScreen.vue'
 import TopNav from './components/TopNav.vue'
 import Sidebar from './components/Sidebar.vue'
@@ -32,8 +40,10 @@ import TaskModal from './components/modals/TaskModal.vue'
 import SettingsModal from './components/modals/SettingsModal.vue'
 import PinChangeModal from './components/modals/PinChangeModal.vue'
 import ProgressModal from './components/modals/ProgressModal.vue'
+import MobileLayout from './components/mobile/MobileLayout.vue'
 
 const store = useTaskStore()
+const { isMobile } = useDevice()
 const addOpen = ref(false)
 const editTaskId = ref(null)
 const settingsOpen = ref(false)

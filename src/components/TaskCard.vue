@@ -7,6 +7,10 @@
     ]"
     :style="cardPadding"
     @contextmenu.prevent="onContextMenu"
+    @touchstart.passive="onTouchStart"
+    @touchend="onTouchEnd"
+    @touchmove="onTouchEnd"
+    @touchcancel="onTouchEnd"
   >
     <!-- List View -->
     <template v-if="isListView">
@@ -144,5 +148,26 @@ function onMoreClick(e) {
 
 function onContextMenu(e) {
   emit('open-context', props.task.id, e.clientX, e.clientY)
+}
+
+let longPressTimer = null
+let longPressFired = false
+function onTouchStart(e) {
+  longPressFired = false
+  if (longPressTimer) clearTimeout(longPressTimer)
+  const touch = e.touches[0]
+  const x = touch.clientX
+  const y = touch.clientY
+  longPressTimer = setTimeout(() => {
+    longPressFired = true
+    emit('open-context', props.task.id, x, y)
+    if (navigator.vibrate) navigator.vibrate(30)
+  }, 500)
+}
+function onTouchEnd() {
+  if (longPressTimer) {
+    clearTimeout(longPressTimer)
+    longPressTimer = null
+  }
 }
 </script>
