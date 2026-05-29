@@ -60,7 +60,7 @@
 </template>
 
 <script setup>
-import { watch } from 'vue'
+import { watch, onUnmounted } from 'vue'
 import { useTaskStore } from '../../stores/taskStore.js'
 import { CheckSquare, X, Lock, Settings, Layers, Calendar, CalendarRange, AlertTriangle, CheckCircle2 } from 'lucide-vue-next'
 
@@ -101,5 +101,9 @@ function openSettings() {
 watch(() => props.modelValue, (open) => {
   if (typeof document === 'undefined') return
   document.body.style.overflow = open ? 'hidden' : ''
+})
+
+onUnmounted(() => {
+  if (typeof document !== 'undefined') document.body.style.overflow = ''
 })
 </script>

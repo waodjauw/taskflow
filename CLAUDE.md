@@ -52,10 +52,18 @@ Single Pinia store. Key getters: `filteredTasks` (applies `activeNav` + `filters
 
 ### Styles
 
-Plain CSS, no preprocessor. Imported in this order in `main.js`: `variables.css` (color tokens / shadows), `base.css` (reset + `.app-wrapper`), `components.css` (all desktop component styles, ~600 lines), Element Plus, `element-overrides.css`, then `mobile.css` (must come last — contains tablet overrides and mobile-only `.m-*` classes plus `@media (hover: none)` rules that neutralize desktop hover states on touch).
+Plain CSS, no preprocessor. Imported in this order in `main.js`: `variables.css` (color tokens / shadows), `base.css` (reset + `.app-wrapper`), `components.css` (all desktop component styles, ~600 lines), then `mobile.css` (must come last — contains tablet overrides and mobile-only `.m-*` classes plus `@media (hover: none)` rules that neutralize desktop hover states on touch).
 
 When adding a new visual element, prefer extending `components.css` and reusing `--accent`, `--bg-*`, `--text-*`, `--border-color`, `--shadow*`, `--radius`, `--transition` from `variables.css`.
 
 ### External integration
 
-Element Plus is loaded but only used sparingly (form elements). Icons are `lucide-vue-next`. Inter font is loaded from Google Fonts in `index.html`.
+Icons use `lucide-vue-next`. All form elements, buttons, dialogs, sheets are native HTML + custom CSS — no UI component library. Inter font is loaded from Google Fonts in `index.html`.
+
+### Recurring tasks
+
+When a task with `cycle !== 'none'` is marked complete (via `toggleComplete` or `updateProgress(val=100)`), the store calls `advanceDeadline(dl, cycle)` to push `deadline` and `reminder` forward by one cycle (daily +1d / weekly +7d / monthly +1mo, preserving hour/minute), resets `progress` to 0, and the task is NOT marked done. Implemented in `src/stores/taskStore.js`.
+
+### Search debouncing
+
+Both `Toolbar.vue` and `mobile/MobileToolbar.vue` use `useDebouncedRef(initial, 250)` from `src/composables/useDebouncedRef.js` to batch keystrokes before calling `store.setFilter('search', ...)`.

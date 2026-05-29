@@ -2,7 +2,7 @@
   <div class="m-toolbar">
     <div class="search-box" style="flex:1;">
       <Search :size="15" style="color:var(--text-muted);flex-shrink:0;" />
-      <input type="text" :value="store.filters.search" @input="store.setFilter('search', $event.target.value)" placeholder="搜索…" />
+      <input type="text" v-model="search.local.value" placeholder="搜索…" />
     </div>
     <button class="m-icon-btn" @click="sheetOpen = true" aria-label="筛选">
       <SlidersHorizontal :size="18" />
@@ -17,13 +17,17 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useTaskStore } from '../../stores/taskStore.js'
+import { useDebouncedRef } from '../../composables/useDebouncedRef.js'
 import { Search, SlidersHorizontal, CheckSquare } from 'lucide-vue-next'
 import MobileFilterSheet from './MobileFilterSheet.vue'
 
 const store = useTaskStore()
 const sheetOpen = ref(false)
+
+const search = useDebouncedRef(store.filters.search, 250)
+watch(search.debounced, (v) => store.setFilter('search', v))
 
 const activeFilterCount = computed(() => {
   let n = 0

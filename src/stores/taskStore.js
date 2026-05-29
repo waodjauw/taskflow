@@ -37,6 +37,22 @@ export function formatDeadline(dl) {
   return d.getFullYear() + '/' + String(d.getMonth() + 1).padStart(2, '0') + '/' + String(d.getDate()).padStart(2, '0') + ' ' + String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0')
 }
 
+function toLocalInputStr(d) {
+  const pad = (n) => String(n).padStart(2, '0')
+  return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()) + 'T' + pad(d.getHours()) + ':' + pad(d.getMinutes())
+}
+
+export function advanceDeadline(dl, cycle) {
+  if (!dl) return dl
+  const d = new Date(dl)
+  if (isNaN(d.getTime())) return dl
+  if (cycle === 'daily') d.setDate(d.getDate() + 1)
+  else if (cycle === 'weekly') d.setDate(d.getDate() + 7)
+  else if (cycle === 'monthly') d.setMonth(d.getMonth() + 1)
+  else return dl
+  return toLocalInputStr(d)
+}
+
 export function getPriorityLabel(p) {
   return { critical: '🔴 紧急', high: '🟠 高', medium: '🟡 中', low: '🟢 低' }[p] || p
 }
@@ -190,7 +206,9 @@ export const useTaskStore = defineStore('task', {
         if (pin) this.pin = pin
         const sraw = localStorage.getItem(SETTINGS_KEY)
         if (sraw) Object.assign(this.settings, JSON.parse(sraw))
-      } catch (e) { /* ignore */ }
+      } catch (e) {
+        toastService.showToast('数据加载失败：' + e.message, 'error')
+      }
 
       if (!this.settings.pinEnabled) this.isLocked = false
 
@@ -219,7 +237,9 @@ export const useTaskStore = defineStore('task', {
         localStorage.setItem(STORAGE_KEY, JSON.stringify({ tasks: this.tasks, categories: this.categories }))
         localStorage.setItem(PIN_KEY, this.pin)
         localStorage.setItem(SETTINGS_KEY, JSON.stringify(this.settings))
-      } catch (e) { /* ignore */ }
+      } catch (e) {
+        toastService.showToast('数据保存失败：' + e.message, 'error')
+      }
     },
 
     isDuplicateTask(title, deadlineStr, excludeId) {
@@ -265,6 +285,14 @@ export const useTaskStore = defineStore('task', {
     toggleComplete(id) {
       const t = this.tasks.find(x => x.id === id)
       if (!t) return
+      if (!t.done && t.cycle && t.cycle !== 'none' && t.deadline) {
+        t.deadline = advanceDeadline(t.deadline, t.cycle)
+        if (t.reminder) t.reminder = advanceDeadline(t.reminder, t.cycle)
+        t.progress = 0
+        this._save()
+        toastService.showToast('本轮完成 🎉 已推进到下一周期', 'success')
+        return
+      }
       t.done = !t.done
       if (t.done) t.progress = 100
       this._save()
@@ -274,6 +302,14 @@ export const useTaskStore = defineStore('task', {
     updateProgress(id, val) {
       const t = this.tasks.find(x => x.id === id)
       if (!t) return
+      if (val === 100 && t.cycle && t.cycle !== 'none' && t.deadline) {
+        t.deadline = advanceDeadline(t.deadline, t.cycle)
+        if (t.reminder) t.reminder = advanceDeadline(t.reminder, t.cycle)
+        t.progress = 0
+        this._save()
+        toastService.showToast('本轮完成 🎉 已推进到下一周期', 'success')
+        return
+      }
       t.progress = val
       if (val === 100) t.done = true
       this._save()

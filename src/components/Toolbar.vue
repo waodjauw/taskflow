@@ -2,7 +2,7 @@
   <div class="toolbar">
     <div class="search-box">
       <Search :size="15" style="color:var(--text-muted);flex-shrink:0;" />
-      <input type="text" :value="store.filters.search" @input="store.setFilter('search', $event.target.value)" placeholder="搜索任务名称或描述…" />
+      <input type="text" v-model="search.local.value" placeholder="搜索任务名称或描述…" />
     </div>
     <select class="filter-select" :value="store.filters.cat" @change="store.setFilter('cat', $event.target.value)">
       <option value="">全部类别</option>
@@ -35,7 +35,12 @@
 </template>
 
 <script setup>
+import { watch } from 'vue'
 import { useTaskStore } from '../stores/taskStore.js'
+import { useDebouncedRef } from '../composables/useDebouncedRef.js'
 import { Search, CheckSquare, LayoutGrid, List } from 'lucide-vue-next'
+
 const store = useTaskStore()
+const search = useDebouncedRef(store.filters.search, 250)
+watch(search.debounced, (v) => store.setFilter('search', v))
 </script>
