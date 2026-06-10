@@ -4,6 +4,7 @@
 
 ## 最近更新
 
+- **Vue Router 集成**：引入 vue-router Hash 模式，URL 反映当前视图，支持浏览器前进/后退和书签
 - **CSS 体积减少 93%**：移除未使用的 Element Plus，CSS 从 385 KB 降到 25 KB
 - **循环任务真正工作**：每日 / 每周 / 每月任务勾选完成后会自动推进到下一周期，而非永久标记为已完成
 - **搜索框防抖**：250ms 防抖，避免大量任务时每次按键都触发筛选
@@ -29,6 +30,7 @@
 | 类型 | 选型 |
 |---|---|
 | 框架 | Vue 3（Composition API + `<script setup>`） |
+| 路由 | Vue Router 4（Hash 模式） |
 | 状态管理 | Pinia 2 |
 | 构建工具 | Vite 5 |
 | 图标 | lucide-vue-next |
@@ -64,7 +66,7 @@ npm run deploy
 ```
 dist/index.html           0.67 kB │ gzip: 0.42 kB
 dist/assets/index-*.css  25.68 kB │ gzip: 5.10 kB
-dist/assets/index-*.js  158.19 kB │ gzip: 53.03 kB
+dist/assets/index-*.js  185.49 kB │ gzip: 62.97 kB
 ```
 
 ## 项目结构
@@ -75,8 +77,10 @@ taskflow/
 ├── vite.config.js
 ├── package.json
 └── src/
-    ├── main.js                       # 入口：注册 Pinia、按顺序引入样式
+    ├── main.js                       # 入口：注册 Pinia + Router、按顺序引入样式
     ├── App.vue                       # 根组件，按 isMobile 切换两套布局树
+    ├── router/
+    │   └── index.js                  # Vue Router 配置（7 条 Hash 路由）
     ├── components/
     │   ├── TopNav.vue                # 桌面顶栏
     │   ├── Sidebar.vue               # 桌面侧栏（260px）
@@ -120,12 +124,21 @@ taskflow/
 
 ## 架构说明
 
-### 无路由设计
+### 路由设计
 
-整个应用没有使用 vue-router，**视图状态由 `store.activeNav` 驱动**，取值如：
-- `all` / `today` / `week` / `overdue` / `done`
-- `p-<priority>`（如 `p-critical`）
-- `cat-<id>`（如 `cat-work`）
+使用 Vue Router 4 **Hash 模式**（`createWebHashHistory`），兼容 GitHub Pages 静态部署。路由与 `store.activeNav` 单向同步：
+
+| URL | activeNav |
+|---|---|
+| `/` | `all` |
+| `/today` | `today` |
+| `/week` | `week` |
+| `/overdue` | `overdue` |
+| `/done` | `done` |
+| `/priority/:priority` | `p-<priority>` |
+| `/category/:id` | `cat-<id>` |
+
+**数据流**：路由变化 → `App.vue` 中的 `watch(route.path)` → `store.syncFromRoute(route)` 设置 `activeNav` → `filteredTasks` getter 重新计算。导航点击通过 `router.push()` 触发，不直接调用 `store.setActiveNav()`。
 
 组件通过 `store.filteredTasks` getter 自动响应 nav 切换 + 筛选条件 + 排序（逾期优先 → 未完成优先 → 优先级排序）。
 
