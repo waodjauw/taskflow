@@ -77,7 +77,7 @@ export const useTaskStore = defineStore('task', {
       layout: 'grid',
       cardStyle: 'default',
       progressDisplay: 'both',
-      pinEnabled: true,
+      pinEnabled: false,
       notifEnabled: true,
       overdueAlert: true,
       remindAhead: 30,
@@ -87,7 +87,7 @@ export const useTaskStore = defineStore('task', {
     batchMode: false,
     filters: { search: '', cat: '', cycle: '', priority: '' },
     activeNav: 'all',
-    isLocked: true,
+    isLocked: false,
     contextTaskId: null,
     contextMenuPos: { x: 0, y: 0 },
   }),
@@ -210,7 +210,7 @@ export const useTaskStore = defineStore('task', {
         toastService.showToast('数据加载失败：' + e.message, 'error')
       }
 
-      if (!this.settings.pinEnabled) this.isLocked = false
+      this.isLocked = this.settings.pinEnabled
 
       if (this.tasks.length === 0) this._seedDemoData()
     },
