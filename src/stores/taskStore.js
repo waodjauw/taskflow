@@ -212,7 +212,7 @@ export const useTaskStore = defineStore('task', {
 
       this.isLocked = this.settings.pinEnabled
 
-      if (this.tasks.length === 0) this._seedDemoData()
+      if (!localStorage.getItem(STORAGE_KEY)) this._seedDemoData()
     },
 
     _seedDemoData() {
