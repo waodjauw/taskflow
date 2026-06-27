@@ -125,8 +125,8 @@
                   <button @click="store.deleteCategory(cat.id)" style="padding:3px 8px;border-radius:6px;border:1px solid var(--border-color);background:var(--bg-card);color:var(--text-muted);font-size:11px;cursor:pointer;">删除</button>
                 </div>
               </div>
-              <div style="display:flex;gap:8px;">
-                <input type="text" class="form-input" v-model="newCatName" placeholder="新类别名称…" style="flex:1;" />
+              <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                <input type="text" class="form-input" v-model="newCatName" placeholder="新类别名称…" style="flex:1;min-width:140px;" />
                 <input type="color" v-model="newCatColor" style="width:36px;height:36px;border:none;border-radius:8px;cursor:pointer;background:none;" />
                 <button class="btn-primary" @click="addCat" style="padding:8px 14px;">
                   <Plus :size="13" />

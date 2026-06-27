@@ -15,9 +15,35 @@ There is no test runner, linter, or formatter configured.
 
 The Vite `base` is `/test/` (matches the GitHub Pages repo name). Don't change it without updating the deploy target.
 
+Default PIN is `1234`. PIN is stored in plain text in `localStorage` — it's a casual guard, not real security.
+
 ## Architecture
 
-TaskFlow Pro is a single-page Vue 3 + Pinia task manager. There is **no router** — view state lives in `store.activeNav` (values like `all`, `today`, `week`, `overdue`, `done`, `p-<priority>`, `cat-<id>`), and components react to it. State is persisted to `localStorage` under keys `taskflow_data_v3`, `taskflow_settings`, `taskflow_pin`.
+TaskFlow Pro is a single-page Vue 3 + Pinia task manager with **Vue Router 4 Hash mode**. View state lives in `store.activeNav` (values: `all`, `today`, `week`, `overdue`, `done`, `p-<priority>`, `cat-<id>`), and components react to it. Route changes sync to `activeNav` via `store.syncFromRoute(route)`, not the other way around. Navigation clicks use `router.push()`.
+
+### Router
+
+7 routes defined in `src/router/index.js` using `createWebHashHistory()` (compatible with GitHub Pages static hosting):
+
+| Route | activeNav |
+|---|---|
+| `/` | `all` |
+| `/today` | `today` |
+| `/week` | `week` |
+| `/overdue` | `overdue` |
+| `/done` | `done` |
+| `/priority/:priority` | `p-<priority>` |
+| `/category/:id` | `cat-<id>` |
+
+`App.vue` watches `route.path` and calls `store.syncFromRoute(route)` to keep `activeNav` in sync. Task lists re-compute via the `filteredTasks` getter.
+
+### localStorage keys
+
+| Key | Stores |
+|---|---|
+| `taskflow_data_v3` | `tasks` + `categories` |
+| `taskflow_settings` | theme, layout, card style, progress display, PIN toggle, reminder settings |
+| `taskflow_pin` | PIN code |
 
 ### Dual layout: desktop vs. mobile
 
@@ -39,9 +65,9 @@ Defined in `src/composables/useDevice.js` (module-level singleton with `matchMed
 
 ### State (`src/stores/taskStore.js`)
 
-Single Pinia store. Key getters: `filteredTasks` (applies `activeNav` + `filters.{search,cat,cycle,priority}` + sorting by overdue/done/priority), `stats`, `navBadges`, `categoryBadges`. Date helpers (`isToday`, `isThisWeek`, `isOverdue`, `formatDeadline`, `getPriorityLabel`, `getPriorityTagClass`) are exported from this file — reuse them instead of duplicating.
+Single Pinia store. Key getters: `filteredTasks` (applies `activeNav` + `filters.{search,cat,cycle,priority}` + sorting by overdue/done/priority), `stats`, `navBadges`, `categoryBadges`. Key actions: `syncFromRoute(route)` maps URL to `activeNav`, `toggleComplete`, `updateProgress`, `advanceDeadline` (cycle task push), `addCategory`/`deleteCategory`. Date helpers (`isToday`, `isThisWeek`, `isOverdue`, `formatDeadline`, `getPriorityLabel`, `getPriorityTagClass`) are exported from this file — reuse them instead of duplicating.
 
-`loadFromStorage()` is called from `App.vue` `onMounted`; `scheduleReminders` re-runs on `watch` of tasks/notification settings.
+`loadFromStorage()` is called from `App.vue` `onMounted`; `scheduleReminders` re-runs on `watch` of tasks/notification settings. First-time load auto-injects 8 demo tasks.
 
 ### Composables
 
