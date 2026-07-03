@@ -41,9 +41,12 @@ TaskFlow Pro is a single-page Vue 3 + Pinia task manager with **Vue Router 4 Has
 
 | Key | Stores |
 |---|---|
-| `taskflow_data_v3` | `tasks` + `categories` |
+| `taskflow_tasks` | tasks array |
+| `taskflow_categories` | categories array |
 | `taskflow_settings` | theme, layout, card style, progress display, PIN toggle, reminder settings |
 | `taskflow_pin` | PIN code |
+
+Legacy key `taskflow_data_v3` (stored `{tasks, categories}` together) is migrated on first load then deleted.
 
 ### Dual layout: desktop vs. mobile
 
@@ -63,11 +66,34 @@ Defined in `src/composables/useDevice.js` (module-level singleton with `matchMed
 - Tablet: `768px–1023px`
 - Desktop: `≥1024px`
 
-### State (`src/stores/taskStore.js`)
+### State (Pinia stores)
 
-Single Pinia store. Key getters: `filteredTasks` (applies `activeNav` + `filters.{search,cat,cycle,priority}` + sorting by overdue/done/priority), `stats`, `navBadges`, `categoryBadges`. Key actions: `syncFromRoute(route)` maps URL to `activeNav`, `toggleComplete`, `updateProgress`, `advanceDeadline` (cycle task push), `addCategory`/`deleteCategory`. Date helpers (`isToday`, `isThisWeek`, `isOverdue`, `formatDeadline`, `getPriorityLabel`, `getPriorityTagClass`) are exported from this file — reuse them instead of duplicating.
+6 independent stores under `src/stores/`:
 
-`loadFromStorage()` is called from `App.vue` `onMounted`; `scheduleReminders` re-runs on `watch` of tasks/notification settings. First-time load auto-injects 8 demo tasks.
+| Store | File | Purpose | Persisted |
+|-------|------|---------|-----------|
+| `useTaskStore` | `taskStore.js` | tasks CRUD, `filteredTasks` getter, `stats`/`navBadges`/`alertTasks`, `filters`, `activeNav`, `syncFromRoute` | yes (`taskflow_tasks`) |
+| `useCategoryStore` | `categoryStore.js` | categories CRUD, `categoryBadges` getter | yes (`taskflow_categories`) |
+| `useSettingsStore` | `settingsStore.js` | theme, layout, cardStyle, progressDisplay, pinEnabled, notifEnabled, remindAhead | yes (`taskflow_settings`) |
+| `useAuthStore` | `authStore.js` | `pin`, `isLocked`, `verifyPin`, `lockApp`, `changePin` | yes (`taskflow_pin`) |
+| `useBatchStore` | `batchStore.js` | `selectedTasks[]`, `batchMode`, batch operations | no |
+| `useContextMenuStore` | `contextMenuStore.js` | `contextTaskId`, `contextMenuPos`, `contextTask` getter | no |
+
+**Cross-store dependencies** (all one-way, no cycles):
+- `categoryStore` → `taskStore` (categoryBadges counts tasks per category, deleteCategory checks for tasks)
+- `batchStore` → `taskStore` (batchSelectAll reads filteredTasks, batchMarkDone/batchDelete mutate tasks)
+- `contextMenuStore` → `taskStore` (contextTask getter finds task by ID)
+- `authStore` → `settingsStore` (loadFromStorage reads pinEnabled to set isLocked)
+
+**Initialization order** in `App.vue` `onMounted` (matters because of the authStore→settingsStore dep):
+1. `settingsStore.loadFromStorage()`
+2. `authStore.loadFromStorage()`
+3. `taskStore.loadFromStorage()`
+4. `categoryStore.loadFromStorage()`
+
+**Utility functions** are in `src/utils/helpers.js`: `isToday`, `isThisWeek`, `isThisMonth`, `isOverdue`, `formatDeadline`, `advanceDeadline`, `getPriorityLabel`, `getPriorityTagClass`, `genId`, `genCatId`. Import from `../utils/helpers.js` — do NOT duplicate these.
+
+`loadFromStorage()` is called from `App.vue` `onMounted`; `scheduleReminders` re-runs on `watch` of tasks/notification settings. First-time load auto-injects 8 demo tasks and 5 default categories.
 
 ### Composables
 
