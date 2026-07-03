@@ -119,10 +119,10 @@
             <div class="settings-section">
               <div class="settings-section-title"><Tag :size="15" /> 类别管理</div>
               <div style="display:flex;flex-direction:column;gap:6px;max-height:140px;overflow-y:auto;margin-bottom:10px;">
-                <div v-for="cat in store.categories" :key="cat.id" style="display:flex;align-items:center;gap:8px;padding:6px 8px;background:var(--bg-primary);border-radius:8px;">
+                <div v-for="cat in catStore.categories" :key="cat.id" style="display:flex;align-items:center;gap:8px;padding:6px 8px;background:var(--bg-primary);border-radius:8px;">
                   <span :style="{ width: '12px', height: '12px', background: cat.color, borderRadius: '50%', flexShrink: 0 }"></span>
                   <span style="flex:1;font-size:13px;color:var(--text-primary);">{{ cat.name }}</span>
-                  <button @click="store.deleteCategory(cat.id)" style="padding:3px 8px;border-radius:6px;border:1px solid var(--border-color);background:var(--bg-card);color:var(--text-muted);font-size:11px;cursor:pointer;">删除</button>
+                  <button @click="catStore.deleteCategory(cat.id)" style="padding:3px 8px;border-radius:6px;border:1px solid var(--border-color);background:var(--bg-card);color:var(--text-muted);font-size:11px;cursor:pointer;">删除</button>
                 </div>
               </div>
               <div style="display:flex;gap:8px;flex-wrap:wrap;">
@@ -147,19 +147,21 @@
 
 <script setup>
 import { ref } from 'vue'
-import { useTaskStore } from '../../stores/taskStore.js'
+import { useSettingsStore } from '../../stores/settingsStore.js'
+import { useCategoryStore } from '../../stores/categoryStore.js'
 import { Settings2, X, Palette, LayoutGrid, List, Square, CreditCard, MinusSquare, Maximize2, BarChart2, Shield, Bell, Tag, Plus, Check } from 'lucide-vue-next'
 
 const props = defineProps({ modelValue: Boolean })
 const emit = defineEmits(['update:modelValue', 'open-pin-change'])
 
-const store = useTaskStore()
+const store = useSettingsStore()
+const catStore = useCategoryStore()
 const newCatName = ref('')
 const newCatColor = ref('#6366f1')
 
 function close() { emit('update:modelValue', false) }
 function openPinChange() { close(); emit('open-pin-change') }
 function addCat() {
-  if (store.addCategory(newCatName.value, newCatColor.value)) newCatName.value = ''
+  if (catStore.addCategory(newCatName.value, newCatColor.value)) newCatName.value = ''
 }
 </script>

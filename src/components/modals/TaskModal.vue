@@ -27,7 +27,7 @@
               <label class="form-label">类别 *</label>
               <select class="form-select" v-model="form.cat">
                 <option value="">选择类别…</option>
-                <option v-for="cat in store.categories" :key="cat.id" :value="cat.id">{{ cat.name }}</option>
+                <option v-for="cat in catStore.categories" :key="cat.id" :value="cat.id">{{ cat.name }}</option>
               </select>
             </div>
             <div class="form-group" style="margin-bottom:0;">
@@ -78,6 +78,7 @@
 <script setup>
 import { ref, watch } from 'vue'
 import { useTaskStore } from '../../stores/taskStore.js'
+import { useCategoryStore } from '../../stores/categoryStore.js'
 import { toastService } from '../../composables/useToast.js'
 import { PlusCircle, X, Check } from 'lucide-vue-next'
 
@@ -85,6 +86,7 @@ const props = defineProps({ modelValue: Boolean, taskId: { type: String, default
 const emit = defineEmits(['update:modelValue'])
 
 const store = useTaskStore()
+const catStore = useCategoryStore()
 const showDupWarning = ref(false)
 const priorities = [
   { value: 'critical', label: '🔴 紧急' },

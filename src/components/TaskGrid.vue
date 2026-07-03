@@ -1,6 +1,6 @@
 <template>
   <div class="tasks-container">
-    <div :class="store.settings.layout === 'list' ? 'task-list' : 'task-grid'">
+    <div :class="settings.settings.layout === 'list' ? 'task-list' : 'task-grid'">
       <template v-if="store.filteredTasks.length === 0">
         <div class="empty-state" style="grid-column:1/-1;">
           <div class="empty-icon"><Inbox :size="28" /></div>
@@ -12,9 +12,9 @@
         v-for="task in store.filteredTasks"
         :key="task.id"
         :task="task"
-        :is-list-view="store.settings.layout === 'list'"
+        :is-list-view="settings.settings.layout === 'list'"
         @toggle-complete="store.toggleComplete"
-        @toggle-select="store.toggleSelectTask"
+        @toggle-select="batch.toggleSelectTask"
         @open-context="openContext"
       />
     </div>
@@ -23,12 +23,18 @@
 
 <script setup>
 import { useTaskStore } from '../stores/taskStore.js'
+import { useSettingsStore } from '../stores/settingsStore.js'
+import { useBatchStore } from '../stores/batchStore.js'
+import { useContextMenuStore } from '../stores/contextMenuStore.js'
 import TaskCard from './TaskCard.vue'
 import { Inbox } from 'lucide-vue-next'
 
 const store = useTaskStore()
+const settings = useSettingsStore()
+const batch = useBatchStore()
+const ctx = useContextMenuStore()
 
 function openContext(taskId, x, y) {
-  store.openContextMenu(taskId, x, y)
+  ctx.openContextMenu(taskId, x, y)
 }
 </script>

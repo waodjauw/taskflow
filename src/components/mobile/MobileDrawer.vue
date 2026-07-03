@@ -36,12 +36,12 @@
             </div>
 
             <div class="sidebar-section-title">类别</div>
-            <div v-for="cat in store.categories" :key="cat.id"
+            <div v-for="cat in catStore.categories" :key="cat.id"
               class="sidebar-item" :class="{ active: store.activeNav === 'cat-' + cat.id }"
               @click="selectNav('/category/' + cat.id)">
               <span :style="{ width: '8px', height: '8px', background: cat.color, borderRadius: '50%', flexShrink: 0, display: 'inline-block' }"></span>
               {{ cat.name }}
-              <span class="badge" :style="{ background: cat.color }">{{ store.categoryBadges[cat.id] || 0 }}</span>
+              <span class="badge" :style="{ background: cat.color }">{{ catStore.categoryBadges[cat.id] || 0 }}</span>
             </div>
 
             <div class="m-drawer-footer">
@@ -63,12 +63,16 @@
 import { watch, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useTaskStore } from '../../stores/taskStore.js'
+import { useCategoryStore } from '../../stores/categoryStore.js'
+import { useAuthStore } from '../../stores/authStore.js'
 import { CheckSquare, X, Lock, Settings, Layers, Calendar, CalendarRange, AlertTriangle, CheckCircle2 } from 'lucide-vue-next'
 
 const props = defineProps({ modelValue: Boolean })
 const emit = defineEmits(['update:modelValue', 'open-settings'])
 
 const store = useTaskStore()
+const catStore = useCategoryStore()
+const auth = useAuthStore()
 const router = useRouter()
 
 const navItems = [
@@ -92,7 +96,7 @@ function selectNav(routePath) {
   close()
 }
 function lockApp() {
-  store.lockApp()
+  auth.lockApp()
   close()
 }
 function openSettings() {

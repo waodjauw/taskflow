@@ -15,7 +15,7 @@
       <span style="font-size:12px;font-weight:600;color:var(--accent)">{{ store.overallProgress }}%</span>
     </div>
     <div class="nav-spacer"></div>
-    <button class="nav-btn" @click="store.lockApp()">
+    <button class="nav-btn" @click="auth.lockApp()">
       <Lock :size="14" /> 锁定
     </button>
     <div style="position:relative;">
@@ -35,8 +35,10 @@
 
 <script setup>
 import { useTaskStore } from '../stores/taskStore.js'
+import { useAuthStore } from '../stores/authStore.js'
 import { CheckSquare, Lock, Bell, Settings, Plus } from 'lucide-vue-next'
 
 const store = useTaskStore()
+const auth = useAuthStore()
 defineEmits(['open-settings', 'open-add'])
 </script>

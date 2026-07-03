@@ -13,10 +13,10 @@
 </template>
 
 <script setup>
-import { useTaskStore } from '../stores/taskStore.js'
+import { useBatchStore } from '../stores/batchStore.js'
 import { CheckSquare, Trash2 } from 'lucide-vue-next'
 
-const store = useTaskStore()
+const store = useBatchStore()
 
 function cancelBatch() {
   store.batchMode = false

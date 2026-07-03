@@ -1,139 +1,15 @@
 import { defineStore } from "pinia";
 import { toastService } from "../composables/useToast.js";
+import { genId, isToday, isThisWeek, isThisMonth, isOverdue, advanceDeadline } from "../utils/helpers.js";
 
-const STORAGE_KEY = "taskflow_data_v3";
-const PIN_KEY = "taskflow_pin";
-const SETTINGS_KEY = "taskflow_settings";
-
-function genId() {
-  return "t" + Date.now() + Math.random().toString(36).slice(2, 6);
-}
-function genCatId() {
-  return "c" + Date.now() + Math.random().toString(36).slice(2, 5);
-}
-
-function isToday(dateStr) {
-  if (!dateStr) return false;
-  const d = new Date(dateStr),
-    t = new Date();
-  return (
-    d.getFullYear() === t.getFullYear() &&
-    d.getMonth() === t.getMonth() &&
-    d.getDate() === t.getDate()
-  );
-}
-function isThisWeek(dateStr) {
-  if (!dateStr) return false;
-  const d = new Date(dateStr),
-    now = new Date();
-  const start = new Date(now);
-  start.setDate(now.getDate() - now.getDay());
-  const end = new Date(start);
-  end.setDate(start.getDate() + 6);
-  start.setHours(0, 0, 0, 0);
-  end.setHours(23, 59, 59, 999);
-  return d >= start && d <= end;
-}
-function isThisMonth(dateStr) {
-  if (!dateStr) return false;
-  const d = new Date(dateStr),
-    t = new Date();
-  return d.getFullYear() === t.getFullYear() && d.getMonth() === t.getMonth();
-}
-function isOverdue(task) {
-  if (!task.deadline || task.done) return false;
-  return new Date(task.deadline) < new Date();
-}
-
-export function formatDeadline(dl) {
-  if (!dl) return "";
-  const d = new Date(dl);
-  return (
-    d.getFullYear() +
-    "/" +
-    String(d.getMonth() + 1).padStart(2, "0") +
-    "/" +
-    String(d.getDate()).padStart(2, "0") +
-    " " +
-    String(d.getHours()).padStart(2, "0") +
-    ":" +
-    String(d.getMinutes()).padStart(2, "0")
-  );
-}
-
-function toLocalInputStr(d) {
-  const pad = (n) => String(n).padStart(2, "0");
-  return (
-    d.getFullYear() +
-    "-" +
-    pad(d.getMonth() + 1) +
-    "-" +
-    pad(d.getDate()) +
-    "T" +
-    pad(d.getHours()) +
-    ":" +
-    pad(d.getMinutes())
-  );
-}
-
-export function advanceDeadline(dl, cycle) {
-  if (!dl) return dl;
-  const d = new Date(dl);
-  if (isNaN(d.getTime())) return dl;
-  if (cycle === "daily") d.setDate(d.getDate() + 1);
-  else if (cycle === "weekly") d.setDate(d.getDate() + 7);
-  else if (cycle === "monthly") d.setMonth(d.getMonth() + 1);
-  else return dl;
-  return toLocalInputStr(d);
-}
-
-export function getPriorityLabel(p) {
-  return (
-    { critical: "🔴 紧急", high: "🟠 高", medium: "🟡 中", low: "🟢 低" }[p] ||
-    p
-  );
-}
-export function getPriorityTagClass(p) {
-  return (
-    {
-      critical: "tag-priority-critical",
-      high: "tag-priority-high",
-      medium: "tag-priority-medium",
-      low: "tag-priority-low",
-    }[p] || ""
-  );
-}
-
-export { isToday, isThisWeek, isThisMonth, isOverdue };
+const STORAGE_KEY = "taskflow_tasks";
+const OLD_STORAGE_KEY = "taskflow_data_v3";
 
 export const useTaskStore = defineStore("task", {
   state: () => ({
     tasks: [],
-    categories: [
-      { id: "work", name: "工作", color: "#6366f1" },
-      { id: "study", name: "学习", color: "#0ea5e9" },
-      { id: "personal", name: "个人", color: "#ec4899" },
-      { id: "health", name: "健康", color: "#22c55e" },
-      { id: "finance", name: "财务", color: "#f59e0b" },
-    ],
-    settings: {
-      theme: "light",
-      layout: "grid",
-      cardStyle: "default",
-      progressDisplay: "both",
-      pinEnabled: false,
-      notifEnabled: true,
-      overdueAlert: true,
-      remindAhead: 30,
-    },
-    pin: "1234",
-    selectedTasks: [],
-    batchMode: false,
     filters: { search: "", cat: "", cycle: "", priority: "" },
     activeNav: "all",
-    isLocked: false,
-    contextTaskId: null,
-    contextMenuPos: { x: 0, y: 0 },
   }),
 
   getters: {
@@ -213,14 +89,6 @@ export const useTaskStore = defineStore("task", {
       };
     },
 
-    categoryBadges(state) {
-      const result = {};
-      state.categories.forEach((cat) => {
-        result[cat.id] = state.tasks.filter((t) => t.cat === cat.id).length;
-      });
-      return result;
-    },
-
     overallProgress(state) {
       const total = state.tasks.length;
       const done = state.tasks.filter((t) => t.done).length;
@@ -255,10 +123,6 @@ export const useTaskStore = defineStore("task", {
             new Date(t.deadline) > new Date()),
       );
     },
-
-    contextTask(state) {
-      return state.tasks.find((t) => t.id === state.contextTaskId) || null;
-    },
   },
 
   actions: {
@@ -266,21 +130,26 @@ export const useTaskStore = defineStore("task", {
       try {
         const raw = localStorage.getItem(STORAGE_KEY);
         if (raw) {
-          const saved = JSON.parse(raw);
-          if (saved.tasks) this.tasks = saved.tasks;
-          if (saved.categories) this.categories = saved.categories;
+          this.tasks = JSON.parse(raw);
+        } else {
+          const oldRaw = localStorage.getItem(OLD_STORAGE_KEY);
+          if (oldRaw) {
+            const saved = JSON.parse(oldRaw);
+            if (saved.tasks) this.tasks = saved.tasks;
+            this._save();
+          }
         }
-        const pin = localStorage.getItem(PIN_KEY);
-        if (pin) this.pin = pin;
-        const sraw = localStorage.getItem(SETTINGS_KEY);
-        if (sraw) Object.assign(this.settings, JSON.parse(sraw));
       } catch (e) {
         toastService.showToast("数据加载失败：" + e.message, "error");
       }
 
-      this.isLocked = this.settings.pinEnabled;
-
-      if (!localStorage.getItem(STORAGE_KEY)) this._seedDemoData();
+      if (
+        !this.tasks.length &&
+        !localStorage.getItem(STORAGE_KEY) &&
+        !localStorage.getItem(OLD_STORAGE_KEY)
+      ) {
+        this._seedDemoData();
+      }
     },
 
     _seedDemoData() {
@@ -402,12 +271,7 @@ export const useTaskStore = defineStore("task", {
 
     _save() {
       try {
-        localStorage.setItem(
-          STORAGE_KEY,
-          JSON.stringify({ tasks: this.tasks, categories: this.categories }),
-        );
-        localStorage.setItem(PIN_KEY, this.pin);
-        localStorage.setItem(SETTINGS_KEY, JSON.stringify(this.settings));
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(this.tasks));
       } catch (e) {
         toastService.showToast("数据保存失败：" + e.message, "error");
       }
@@ -457,7 +321,6 @@ export const useTaskStore = defineStore("task", {
 
     deleteTask(id) {
       this.tasks = this.tasks.filter((t) => t.id !== id);
-      this.selectedTasks = this.selectedTasks.filter((sid) => sid !== id);
       this._save();
       toastService.showToast("任务已删除", "info");
     },
@@ -499,80 +362,8 @@ export const useTaskStore = defineStore("task", {
       toastService.showToast("进度已更新为 " + val + "%", "success");
     },
 
-    toggleBatchMode() {
-      this.batchMode = !this.batchMode;
-      if (!this.batchMode) this.selectedTasks = [];
-    },
-
-    toggleSelectTask(id) {
-      const idx = this.selectedTasks.indexOf(id);
-      if (idx >= 0) this.selectedTasks.splice(idx, 1);
-      else this.selectedTasks.push(id);
-    },
-
-    batchSelectAll() {
-      this.filteredTasks.forEach((t) => {
-        if (!this.selectedTasks.includes(t.id)) this.selectedTasks.push(t.id);
-      });
-    },
-
-    batchMarkDone(done) {
-      if (this.selectedTasks.length === 0) {
-        toastService.showToast("请先选择任务", "warn");
-        return;
-      }
-      this.selectedTasks.forEach((id) => {
-        const t = this.tasks.find((x) => x.id === id);
-        if (t) {
-          t.done = done;
-          if (done) t.progress = 100;
-        }
-      });
-      this._save();
-      this.selectedTasks = [];
-      toastService.showToast(
-        done ? "已批量标记完成" : "已批量标记未完成",
-        "success",
-      );
-    },
-
-    batchDelete() {
-      if (this.selectedTasks.length === 0) {
-        toastService.showToast("请先选择任务", "warn");
-        return;
-      }
-      const cnt = this.selectedTasks.length;
-      this.tasks = this.tasks.filter((t) => !this.selectedTasks.includes(t.id));
-      this.selectedTasks = [];
-      this._save();
-      toastService.showToast("已删除 " + cnt + " 个任务", "info");
-    },
-
-    addCategory(name, color) {
-      if (!name.trim()) {
-        toastService.showToast("请输入类别名称", "error");
-        return false;
-      }
-      if (
-        this.categories.find((c) => c.name.toLowerCase() === name.toLowerCase())
-      ) {
-        toastService.showToast("类别名称已存在", "error");
-        return false;
-      }
-      this.categories.push({ id: genCatId(), name: name.trim(), color });
-      this._save();
-      toastService.showToast("类别「" + name + "」已添加", "success");
-      return true;
-    },
-
-    deleteCategory(id) {
-      if (this.tasks.some((t) => t.cat === id)) {
-        toastService.showToast("该类别下还有任务，无法删除", "error");
-        return;
-      }
-      this.categories = this.categories.filter((c) => c.id !== id);
-      this._save();
-      toastService.showToast("类别已删除", "info");
+    setFilter(key, val) {
+      this.filters[key] = val;
     },
 
     setActiveNav(nav) {
@@ -591,75 +382,6 @@ export const useTaskStore = defineStore("task", {
       else if (p.startsWith("/category/"))
         this.activeNav = "cat-" + route.params.id;
       else this.activeNav = "all";
-    },
-
-    applyTheme(theme) {
-      this.settings.theme = theme;
-      document.documentElement.removeAttribute("data-theme");
-      if (theme !== "light")
-        document.documentElement.setAttribute("data-theme", theme);
-      this._save();
-    },
-
-    setLayout(layout) {
-      this.settings.layout = layout;
-      this._save();
-    },
-
-    setCardStyle(style) {
-      this.settings.cardStyle = style;
-      this._save();
-    },
-
-    setProgressDisplay(mode) {
-      this.settings.progressDisplay = mode;
-      this._save();
-    },
-
-    toggleSetting(key) {
-      this.settings[key] = !this.settings[key];
-      this._save();
-    },
-
-    setRemindAhead(min) {
-      this.settings.remindAhead = parseInt(min);
-      this._save();
-    },
-
-    verifyPin(inputPin) {
-      if (inputPin === this.pin) {
-        this.isLocked = false;
-        toastService.showToast("解锁成功，欢迎回来！", "success");
-        return true;
-      }
-      return false;
-    },
-
-    lockApp() {
-      this.isLocked = true;
-    },
-
-    changePin(oldPin, newPin, confirmPin) {
-      if (oldPin !== this.pin) return { ok: false, msg: "当前 PIN 码错误" };
-      if (newPin.length !== 4) return { ok: false, msg: "PIN 码必须为 4 位" };
-      if (newPin !== confirmPin) return { ok: false, msg: "两次输入不一致" };
-      this.pin = newPin;
-      this._save();
-      toastService.showToast("PIN 码已修改", "success");
-      return { ok: true };
-    },
-
-    setFilter(key, val) {
-      this.filters[key] = val;
-    },
-
-    openContextMenu(taskId, x, y) {
-      this.contextTaskId = taskId;
-      this.contextMenuPos = { x, y };
-    },
-
-    closeContextMenu() {
-      this.contextTaskId = null;
     },
 
     notifyBell() {

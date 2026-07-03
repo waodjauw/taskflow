@@ -14,7 +14,7 @@
 
 <script setup>
 import { ref } from 'vue'
-import { useTaskStore } from '../../stores/taskStore.js'
+import { useBatchStore } from '../../stores/batchStore.js'
 import MobileTopNav from './MobileTopNav.vue'
 import MobileDrawer from './MobileDrawer.vue'
 import MobileStatsRow from './MobileStatsRow.vue'
@@ -23,7 +23,7 @@ import MobileTaskGrid from './MobileTaskGrid.vue'
 import AlertBanner from '../AlertBanner.vue'
 import BatchBar from '../BatchBar.vue'
 
-const store = useTaskStore()
+const store = useBatchStore()
 const drawerOpen = ref(false)
 
 defineEmits(['open-settings', 'open-add'])

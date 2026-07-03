@@ -15,7 +15,7 @@
               <label class="form-label">类别</label>
               <select class="form-select" :value="store.filters.cat" @change="store.setFilter('cat', $event.target.value)">
                 <option value="">全部类别</option>
-                <option v-for="cat in store.categories" :key="cat.id" :value="cat.id">{{ cat.name }}</option>
+                <option v-for="cat in catStore.categories" :key="cat.id" :value="cat.id">{{ cat.name }}</option>
               </select>
             </div>
             <div class="form-group">
@@ -41,10 +41,10 @@
             <div class="form-group">
               <label class="form-label">布局</label>
               <div class="layout-options">
-                <div class="layout-option" :class="{ active: store.settings.layout === 'grid' }" @click="store.setLayout('grid')">
+                <div class="layout-option" :class="{ active: settings.settings.layout === 'grid' }" @click="settings.setLayout('grid')">
                   <LayoutGrid :size="14" /> 网格
                 </div>
-                <div class="layout-option" :class="{ active: store.settings.layout === 'list' }" @click="store.setLayout('list')">
+                <div class="layout-option" :class="{ active: settings.settings.layout === 'list' }" @click="settings.setLayout('list')">
                   <List :size="14" /> 列表
                 </div>
               </div>
@@ -62,11 +62,15 @@
 
 <script setup>
 import { useTaskStore } from '../../stores/taskStore.js'
+import { useCategoryStore } from '../../stores/categoryStore.js'
+import { useSettingsStore } from '../../stores/settingsStore.js'
 import { X, LayoutGrid, List } from 'lucide-vue-next'
 
 const props = defineProps({ modelValue: Boolean })
 const emit = defineEmits(['update:modelValue'])
 const store = useTaskStore()
+const catStore = useCategoryStore()
+const settings = useSettingsStore()
 
 function close() { emit('update:modelValue', false) }
 function resetFilters() {

@@ -101,7 +101,11 @@
 
 <script setup>
 import { computed } from 'vue'
-import { useTaskStore, formatDeadline, getPriorityLabel, getPriorityTagClass, isOverdue as checkOverdue } from '../stores/taskStore.js'
+import { useTaskStore } from '../stores/taskStore.js'
+import { useCategoryStore } from '../stores/categoryStore.js'
+import { useBatchStore } from '../stores/batchStore.js'
+import { useSettingsStore } from '../stores/settingsStore.js'
+import { formatDeadline, getPriorityLabel, getPriorityTagClass, isOverdue as checkOverdue } from '../utils/helpers.js'
 import { useCountdown } from '../composables/useCountdown.js'
 import { Check, MoreHorizontal, AlertCircle, Clock, Timer, Repeat, CalendarCheck } from 'lucide-vue-next'
 
@@ -112,21 +116,24 @@ const props = defineProps({
 const emit = defineEmits(['toggle-complete', 'toggle-select', 'open-context'])
 
 const store = useTaskStore()
+const catStore = useCategoryStore()
+const batch = useBatchStore()
+const settings = useSettingsStore()
 
-const isSelected = computed(() => store.selectedTasks.includes(props.task.id))
-const batchMode = computed(() => store.batchMode)
-const progressDisplay = computed(() => store.settings.progressDisplay)
+const isSelected = computed(() => batch.selectedTasks.includes(props.task.id))
+const batchMode = computed(() => batch.batchMode)
+const progressDisplay = computed(() => settings.settings.progressDisplay)
 const isOverdue = computed(() => checkOverdue(props.task))
 
 const deadlineRef = computed(() => props.task.done ? null : props.task.deadline)
 const { countdownText, countdownClass } = useCountdown(deadlineRef)
 
 const catName = computed(() => {
-  const cat = store.categories.find(c => c.id === props.task.cat)
+  const cat = catStore.categories.find(c => c.id === props.task.cat)
   return cat ? cat.name : '未分类'
 })
 const catTagStyle = computed(() => {
-  const cat = store.categories.find(c => c.id === props.task.cat)
+  const cat = catStore.categories.find(c => c.id === props.task.cat)
   const color = cat ? cat.color : '#94a3b8'
   return { background: color + '22', color }
 })
@@ -136,8 +143,8 @@ const fmtDeadline = computed(() => formatDeadline(props.task.deadline))
 const cycleLabel = computed(() => ({ daily: '每日', weekly: '每周', monthly: '每月' })[props.task.cycle] || props.task.cycle)
 
 const cardPadding = computed(() => {
-  if (store.settings.cardStyle === 'compact') return { padding: '10px 12px' }
-  if (store.settings.cardStyle === 'spacious') return { padding: '20px' }
+  if (settings.settings.cardStyle === 'compact') return { padding: '10px 12px' }
+  if (settings.settings.cardStyle === 'spacious') return { padding: '20px' }
   return {}
 })
 

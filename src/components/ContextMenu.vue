@@ -1,12 +1,12 @@
 <template>
   <Teleport to="body">
-    <div v-if="store.contextTaskId" class="context-menu"
-      :style="{ left: store.contextMenuPos.x + 'px', top: store.contextMenuPos.y + 'px' }">
+    <div v-if="ctx.contextTaskId" class="context-menu"
+      :style="{ left: ctx.contextMenuPos.x + 'px', top: ctx.contextMenuPos.y + 'px' }">
       <div class="ctx-item" @click="editTask">
         <Pencil :size="14" /> 编辑任务
       </div>
       <div class="ctx-item" @click="completeTask">
-        <CheckCircle :size="14" /> {{ store.contextTask?.done ? '标记未完成' : '标记完成' }}
+        <CheckCircle :size="14" /> {{ ctx.contextTask?.done ? '标记未完成' : '标记完成' }}
       </div>
       <div class="ctx-item" @click="progressTask">
         <TrendingUp :size="14" /> 更新进度
@@ -21,27 +21,29 @@
 
 <script setup>
 import { useTaskStore } from '../stores/taskStore.js'
+import { useContextMenuStore } from '../stores/contextMenuStore.js'
 import { Pencil, CheckCircle, TrendingUp, Trash2 } from 'lucide-vue-next'
 
 const store = useTaskStore()
+const ctx = useContextMenuStore()
 const emit = defineEmits(['edit-task', 'progress-task'])
 
 function editTask() {
-  const id = store.contextTaskId
-  store.closeContextMenu()
+  const id = ctx.contextTaskId
+  ctx.closeContextMenu()
   emit('edit-task', id)
 }
 function completeTask() {
-  store.toggleComplete(store.contextTaskId)
-  store.closeContextMenu()
+  store.toggleComplete(ctx.contextTaskId)
+  ctx.closeContextMenu()
 }
 function progressTask() {
-  const id = store.contextTaskId
-  store.closeContextMenu()
+  const id = ctx.contextTaskId
+  ctx.closeContextMenu()
   emit('progress-task', id)
 }
 function deleteTask() {
-  store.deleteTask(store.contextTaskId)
-  store.closeContextMenu()
+  store.deleteTask(ctx.contextTaskId)
+  ctx.closeContextMenu()
 }
 </script>

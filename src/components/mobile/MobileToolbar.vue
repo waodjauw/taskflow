@@ -8,7 +8,7 @@
       <SlidersHorizontal :size="18" />
       <span v-if="activeFilterCount" class="m-filter-dot">{{ activeFilterCount }}</span>
     </button>
-    <button class="m-icon-btn" @click="store.toggleBatchMode()" :class="{ active: store.batchMode }" aria-label="批量">
+    <button class="m-icon-btn" @click="batch.toggleBatchMode()" :class="{ active: batch.batchMode }" aria-label="批量">
       <CheckSquare :size="18" />
     </button>
   </div>
@@ -19,11 +19,13 @@
 <script setup>
 import { ref, computed, watch } from 'vue'
 import { useTaskStore } from '../../stores/taskStore.js'
+import { useBatchStore } from '../../stores/batchStore.js'
 import { useDebouncedRef } from '../../composables/useDebouncedRef.js'
 import { Search, SlidersHorizontal, CheckSquare } from 'lucide-vue-next'
 import MobileFilterSheet from './MobileFilterSheet.vue'
 
 const store = useTaskStore()
+const batch = useBatchStore()
 const sheetOpen = ref(false)
 
 const search = useDebouncedRef(store.filters.search, 250)

@@ -1,6 +1,6 @@
 <template>
   <div :class="isMobile ? 'm-app-root' : 'app-wrapper'">
-    <LockScreen v-if="store.isLocked && store.settings.pinEnabled" />
+    <LockScreen v-if="authStore.isLocked && settingsStore.settings.pinEnabled" />
     <template v-else>
       <MobileLayout
         v-if="isMobile"
@@ -28,6 +28,10 @@
 import { ref, onMounted, onUnmounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useTaskStore } from './stores/taskStore.js'
+import { useCategoryStore } from './stores/categoryStore.js'
+import { useSettingsStore } from './stores/settingsStore.js'
+import { useAuthStore } from './stores/authStore.js'
+import { useContextMenuStore } from './stores/contextMenuStore.js'
 import { scheduleReminders, clearAllReminders } from './composables/useReminders.js'
 import { toastService } from './composables/useToast.js'
 import { useDevice } from './composables/useDevice.js'
@@ -43,7 +47,11 @@ import PinChangeModal from './components/modals/PinChangeModal.vue'
 import ProgressModal from './components/modals/ProgressModal.vue'
 import MobileLayout from './components/mobile/MobileLayout.vue'
 
-const store = useTaskStore()
+const taskStore = useTaskStore()
+const categoryStore = useCategoryStore()
+const settingsStore = useSettingsStore()
+const authStore = useAuthStore()
+const contextMenuStore = useContextMenuStore()
 const route = useRoute()
 const { isMobile } = useDevice()
 const addOpen = ref(false)
@@ -69,19 +77,25 @@ function onKeydown(e) {
     settingsOpen.value = false
     pinChangeOpen.value = false
     progressOpen.value = false
-    store.closeContextMenu()
+    contextMenuStore.closeContextMenu()
   }
 }
 
 function onGlobalClick() {
-  store.closeContextMenu()
+  contextMenuStore.closeContextMenu()
 }
 
 onMounted(() => {
-  store.loadFromStorage()
-  store.applyTheme(store.settings.theme)
-  store.syncFromRoute(route)
-  scheduleReminders(store.tasks, store.settings)
+  settingsStore.loadFromStorage()
+  authStore.loadFromStorage()
+  taskStore.loadFromStorage()
+  categoryStore.loadFromStorage()
+  if (localStorage.getItem('taskflow_data_v3')) {
+    localStorage.removeItem('taskflow_data_v3')
+  }
+  settingsStore.applyTheme(settingsStore.settings.theme)
+  taskStore.syncFromRoute(route)
+  scheduleReminders(taskStore.tasks, settingsStore.settings)
   document.addEventListener('keydown', onKeydown)
   document.addEventListener('click', onGlobalClick)
   setTimeout(() => {
@@ -95,11 +109,11 @@ onUnmounted(() => {
   clearAllReminders()
 })
 
-watch(() => [store.tasks, store.settings.notifEnabled, store.settings.remindAhead], () => {
-  scheduleReminders(store.tasks, store.settings)
+watch(() => [taskStore.tasks, settingsStore.settings.notifEnabled, settingsStore.settings.remindAhead], () => {
+  scheduleReminders(taskStore.tasks, settingsStore.settings)
 }, { deep: true })
 
 watch(() => route.path, () => {
-  store.syncFromRoute(route)
+  taskStore.syncFromRoute(route)
 })
 </script>

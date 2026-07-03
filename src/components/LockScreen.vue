@@ -22,10 +22,10 @@
 
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue'
-import { useTaskStore } from '../stores/taskStore.js'
+import { useAuthStore } from '../stores/authStore.js'
 import { ShieldCheck } from 'lucide-vue-next'
 
-const store = useTaskStore()
+const store = useAuthStore()
 const pinBuffer = ref('')
 const errorMsg = ref('')
 

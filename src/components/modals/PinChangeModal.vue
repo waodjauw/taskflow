@@ -34,13 +34,13 @@
 
 <script setup>
 import { ref, watch } from 'vue'
-import { useTaskStore } from '../../stores/taskStore.js'
+import { useAuthStore } from '../../stores/authStore.js'
 import { X, ShieldCheck } from 'lucide-vue-next'
 
 const props = defineProps({ modelValue: Boolean })
 const emit = defineEmits(['update:modelValue'])
 
-const store = useTaskStore()
+const store = useAuthStore()
 const oldPin = ref('')
 const newPin = ref('')
 const confirmPin = ref('')

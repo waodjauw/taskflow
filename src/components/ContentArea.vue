@@ -9,12 +9,12 @@
 </template>
 
 <script setup>
-import { useTaskStore } from '../stores/taskStore.js'
+import { useBatchStore } from '../stores/batchStore.js'
 import AlertBanner from './AlertBanner.vue'
 import StatsRow from './StatsRow.vue'
 import Toolbar from './Toolbar.vue'
 import BatchBar from './BatchBar.vue'
 import TaskGrid from './TaskGrid.vue'
 
-const store = useTaskStore()
+const store = useBatchStore()
 </script>
