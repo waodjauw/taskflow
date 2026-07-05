@@ -12,6 +12,36 @@
           </div>
         </div>
         <div class="modal-body">
+          <!-- AI 自然语言输入（仅新建模式） -->
+          <div v-if="!taskId" class="ai-parse-section">
+            <div class="ai-parse-header">
+              <Sparkles :size="15" /> AI 智能解析
+            </div>
+            <textarea
+              class="form-textarea"
+              v-model="aiInput"
+              placeholder="描述你想创建的任务，AI 将自动填充表单…&#10;例如：周五前完成项目报告，高优先级，工作类别"
+              rows="2"
+              :disabled="aiLoading"
+            ></textarea>
+            <div style="display:flex;align-items:center;gap:8px;margin-top:8px;">
+              <button
+                class="btn-secondary"
+                @click="aiParse"
+                :disabled="aiLoading || !aiInput.trim()"
+                style="display:flex;align-items:center;gap:6px;"
+              >
+                <Loader v-if="aiLoading" :size="14" class="spin" />
+                <Sparkles v-else :size="14" />
+                {{ aiLoading ? '解析中…' : 'AI 解析' }}
+              </button>
+              <span v-if="aiError" style="color:#ef4444;font-size:12px;">{{ aiError }}</span>
+              <span v-if="aiConfidence && !aiLoading" style="color:var(--accent);font-size:12px;">
+                置信度: {{ { high: '高', medium: '中', low: '低' }[aiConfidence] || aiConfidence }}
+              </span>
+            </div>
+          </div>
+
           <div class="form-group">
             <label class="form-label">任务标题 *</label>
             <input type="text" class="form-input" v-model="form.title" @input="checkDup" placeholder="输入任务标题…" maxlength="80" />
@@ -79,15 +109,21 @@
 import { ref, watch } from 'vue'
 import { useTaskStore } from '../../stores/taskStore.js'
 import { useCategoryStore } from '../../stores/categoryStore.js'
+import { useClaudeAI } from '../../composables/useClaudeAI.js'
 import { toastService } from '../../composables/useToast.js'
-import { PlusCircle, X, Check } from 'lucide-vue-next'
+import { PlusCircle, X, Check, Sparkles, Loader } from 'lucide-vue-next'
 
 const props = defineProps({ modelValue: Boolean, taskId: { type: String, default: null } })
 const emit = defineEmits(['update:modelValue'])
 
 const store = useTaskStore()
 const catStore = useCategoryStore()
+const { parseNaturalLanguage } = useClaudeAI()
 const showDupWarning = ref(false)
+const aiInput = ref('')
+const aiLoading = ref(false)
+const aiError = ref('')
+const aiConfidence = ref('')
 const priorities = [
   { value: 'critical', label: '🔴 紧急' },
   { value: 'high', label: '🟠 高' },
@@ -100,6 +136,9 @@ const form = ref({ title: '', desc: '', cat: '', cycle: 'none', priority: 'mediu
 watch(() => props.modelValue, (val) => {
   if (!val) return
   showDupWarning.value = false
+  aiInput.value = ''
+  aiError.value = ''
+  aiConfidence.value = ''
   if (props.taskId) {
     const t = store.tasks.find(x => x.id === props.taskId)
     if (t) {
@@ -109,6 +148,31 @@ watch(() => props.modelValue, (val) => {
     form.value = { title: '', desc: '', cat: '', cycle: 'none', priority: 'medium', deadline: '', reminder: '', progress: 0 }
   }
 })
+
+async function aiParse() {
+  if (!aiInput.value.trim()) return
+  aiLoading.value = true
+  aiError.value = ''
+  aiConfidence.value = ''
+  try {
+    const result = await parseNaturalLanguage(aiInput.value)
+    form.value.title = result.title || ''
+    form.value.desc = result.desc || ''
+    form.value.priority = ['critical', 'high', 'medium', 'low'].includes(result.priority) ? result.priority : 'medium'
+    form.value.deadline = result.deadline || ''
+    form.value.cycle = ['daily', 'weekly', 'monthly', 'none'].includes(result.cycle) ? result.cycle : 'none'
+    form.value.progress = typeof result.progress === 'number' && result.progress >= 0 && result.progress <= 100 ? result.progress : 0
+    if (result.cat && catStore.categories.find(c => c.id === result.cat)) {
+      form.value.cat = result.cat
+    }
+    aiConfidence.value = result.confidence || ''
+    toastService.showToast('AI 解析完成，请确认后保存', 'success')
+  } catch (e) {
+    aiError.value = e.message || '解析失败，请手动填写'
+  } finally {
+    aiLoading.value = false
+  }
+}
 
 function checkDup() {
   if (!form.value.title.trim()) { showDupWarning.value = false; return }

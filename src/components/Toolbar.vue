@@ -25,6 +25,9 @@
     <button class="btn-secondary" @click="batch.toggleBatchMode()">
       <CheckSquare :size="14" /> 批量操作
     </button>
+    <button class="btn-secondary" @click="$emit('open-breakdown')" title="AI 拆解任务">
+      <Sparkles :size="14" /> AI 拆解
+    </button>
     <button class="btn-secondary" :class="{ active: settings.settings.layout === 'grid' }" @click="settings.setLayout('grid')" title="网格布局">
       <LayoutGrid :size="14" />
     </button>
@@ -41,12 +44,13 @@ import { useCategoryStore } from '../stores/categoryStore.js'
 import { useSettingsStore } from '../stores/settingsStore.js'
 import { useBatchStore } from '../stores/batchStore.js'
 import { useDebouncedRef } from '../composables/useDebouncedRef.js'
-import { Search, CheckSquare, LayoutGrid, List } from 'lucide-vue-next'
+import { Search, CheckSquare, LayoutGrid, List, Sparkles } from 'lucide-vue-next'
 
 const store = useTaskStore()
 const catStore = useCategoryStore()
 const settings = useSettingsStore()
 const batch = useBatchStore()
+defineEmits(['open-breakdown'])
 const search = useDebouncedRef(store.filters.search, 250)
 watch(search.debounced, (v) => store.setFilter('search', v))
 </script>

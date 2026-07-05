@@ -11,6 +11,9 @@
     <button class="m-icon-btn" @click="batch.toggleBatchMode()" :class="{ active: batch.batchMode }" aria-label="批量">
       <CheckSquare :size="18" />
     </button>
+    <button class="m-icon-btn" @click="$emit('open-breakdown')" aria-label="AI 拆解" style="color:var(--accent);">
+      <Sparkles :size="18" />
+    </button>
   </div>
 
   <MobileFilterSheet v-model="sheetOpen" />
@@ -21,12 +24,13 @@ import { ref, computed, watch } from 'vue'
 import { useTaskStore } from '../../stores/taskStore.js'
 import { useBatchStore } from '../../stores/batchStore.js'
 import { useDebouncedRef } from '../../composables/useDebouncedRef.js'
-import { Search, SlidersHorizontal, CheckSquare } from 'lucide-vue-next'
+import { Search, SlidersHorizontal, CheckSquare, Sparkles } from 'lucide-vue-next'
 import MobileFilterSheet from './MobileFilterSheet.vue'
 
 const store = useTaskStore()
 const batch = useBatchStore()
 const sheetOpen = ref(false)
+defineEmits(['open-breakdown'])
 
 const search = useDebouncedRef(store.filters.search, 250)
 watch(search.debounced, (v) => store.setFilter('search', v))

@@ -6,12 +6,14 @@
         v-if="isMobile"
         @open-settings="settingsOpen = true"
         @open-add="openAddModal(null)"
+        @open-breakdown="breakdownOpen = true"
+        @open-weekly-report="reportOpen = true"
       />
       <template v-else>
-        <TopNav @open-settings="settingsOpen = true" @open-add="openAddModal(null)" />
+        <TopNav @open-settings="settingsOpen = true" @open-add="openAddModal(null)" @open-weekly-report="reportOpen = true" />
         <div class="main-layout">
           <Sidebar />
-          <ContentArea />
+          <ContentArea @open-breakdown="breakdownOpen = true" />
         </div>
       </template>
     </template>
@@ -21,6 +23,8 @@
     <SettingsModal v-model="settingsOpen" @open-pin-change="pinChangeOpen = true" />
     <PinChangeModal v-model="pinChangeOpen" />
     <ProgressModal v-model="progressOpen" :task-id="progressTaskId" />
+    <AITaskBreakdown v-model="breakdownOpen" />
+    <AIWeeklyReport v-model="reportOpen" />
   </div>
 </template>
 
@@ -46,6 +50,8 @@ import SettingsModal from './components/modals/SettingsModal.vue'
 import PinChangeModal from './components/modals/PinChangeModal.vue'
 import ProgressModal from './components/modals/ProgressModal.vue'
 import MobileLayout from './components/mobile/MobileLayout.vue'
+import AITaskBreakdown from './components/ai/AITaskBreakdown.vue'
+import AIWeeklyReport from './components/ai/AIWeeklyReport.vue'
 
 const taskStore = useTaskStore()
 const categoryStore = useCategoryStore()
@@ -60,6 +66,8 @@ const settingsOpen = ref(false)
 const pinChangeOpen = ref(false)
 const progressOpen = ref(false)
 const progressTaskId = ref(null)
+const breakdownOpen = ref(false)
+const reportOpen = ref(false)
 
 function openAddModal(taskId) {
   editTaskId.value = taskId || null
@@ -77,6 +85,8 @@ function onKeydown(e) {
     settingsOpen.value = false
     pinChangeOpen.value = false
     progressOpen.value = false
+    breakdownOpen.value = false
+    reportOpen.value = false
     contextMenuStore.closeContextMenu()
   }
 }

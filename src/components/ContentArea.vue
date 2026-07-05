@@ -2,7 +2,7 @@
   <main class="content-area">
     <AlertBanner />
     <StatsRow />
-    <Toolbar />
+    <Toolbar @open-breakdown="$emit('open-breakdown')" />
     <BatchBar v-if="store.batchMode" />
     <TaskGrid />
   </main>
@@ -17,4 +17,5 @@ import BatchBar from './BatchBar.vue'
 import TaskGrid from './TaskGrid.vue'
 
 const store = useBatchStore()
+defineEmits(['open-breakdown'])
 </script>

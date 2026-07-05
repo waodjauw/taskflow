@@ -1,11 +1,11 @@
 <template>
   <div class="m-layout">
-    <MobileTopNav @toggle-drawer="drawerOpen = !drawerOpen" @open-add="$emit('open-add')" />
+    <MobileTopNav @toggle-drawer="drawerOpen = !drawerOpen" @open-add="$emit('open-add')" @open-weekly-report="$emit('open-weekly-report')" />
     <MobileDrawer v-model="drawerOpen" @open-settings="$emit('open-settings')" />
     <main class="m-content">
       <AlertBanner />
       <MobileStatsRow />
-      <MobileToolbar />
+      <MobileToolbar @open-breakdown="$emit('open-breakdown')" />
       <BatchBar v-if="store.batchMode" />
       <MobileTaskGrid />
     </main>
@@ -26,5 +26,5 @@ import BatchBar from '../BatchBar.vue'
 const store = useBatchStore()
 const drawerOpen = ref(false)
 
-defineEmits(['open-settings', 'open-add'])
+defineEmits(['open-settings', 'open-add', 'open-breakdown', 'open-weekly-report'])
 </script>

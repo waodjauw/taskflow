@@ -3,6 +3,9 @@ dist/
 # 忽略根目录下的 node_modules 文件夹
 node_modules/
 
+# 环境变量（含 API Key）
+.env
+
 ms.md
 
 .claude/

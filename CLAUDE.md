@@ -5,17 +5,35 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Commands
 
 ```bash
-npm run dev        # Vite dev server at http://localhost:5173/test/
-npm run build      # Production build to dist/
-npm run preview    # Preview built bundle
-npm run deploy     # Build + publish dist/ to GitHub Pages via gh-pages
+npm run dev          # Vite + Express concurrently (Vite :5173, Express :3001)
+npm run dev:vite     # Vite only
+npm run dev:server   # Express only (with --watch)
+npm run build        # Vite production build to dist/
+npm start            # Express production mode (serves dist/ + API)
+npm run preview      # Vite preview of built bundle
+npm test             # Vitest unit tests
+npm run test:watch   # Vitest in watch mode
+npm run test:e2e     # Playwright E2E tests
+npm run deploy       # Build + publish dist/ to GitHub Pages via gh-pages
 ```
 
-There is no test runner, linter, or formatter configured.
+There is no linter or formatter configured.
 
 The Vite `base` is `/test/` (matches the GitHub Pages repo name). Don't change it without updating the deploy target.
 
 Default PIN is `1234`. PIN is stored in plain text in `localStorage` — it's a casual guard, not real security.
+
+## Backend
+
+An Express server (`server/index.js`) runs on port 3001 and provides:
+- `POST /api/ai/parse-task` — natural language → structured task object (Claude API)
+- `POST /api/ai/breakdown` — goal → subtask list (Claude API)
+- `POST /api/ai/weekly-report` — task data → SSE-streamed Markdown report (Claude API)
+- Static file serving in production (serves `dist/`)
+
+API key is stored server-side in `.env` as `ANTHROPIC_API_KEY`. Never expose it in frontend code. Copy `.env.example` to `.env` and fill in your key.
+
+In dev mode, Vite proxies `/api/*` to Express. In production, Express serves both the API and static files.
 
 ## Architecture
 
@@ -101,6 +119,30 @@ Defined in `src/composables/useDevice.js` (module-level singleton with `matchMed
 - `useReminders.js` — `scheduleReminders(tasks, settings)` clears and rebuilds `setTimeout` chain for in-window reminders (24h cap). Driven by `task.reminder` and `task.deadline - settings.remindAhead`.
 - `useToast.js` — `toastService.showToast(text, type)`. Used by reminders, store mutations, etc.
 - `useCountdown.js` — reactive countdown text/class for a deadline ref.
+- `useDebouncedRef.js` — `useDebouncedRef(initial, 250)` returns `{local, debounced}` ref pair for search input.
+- `useClaudeAI.js` — `parseNaturalLanguage(text)`, `breakdownGoal(goal, existingTasks)`, `streamWeeklyReport(tasks, stats, {onChunk, onDone, onError})`. Calls `/api/ai/*` endpoints. Stream handles reconnection (up to 2 retries).
+
+### AI Features
+
+Three AI-powered features backed by Claude API:
+
+1. **Natural Language Task Creation** — embedded in `TaskModal.vue` (new task mode only). User types a sentence → "AI 解析" button → form auto-fills. User can edit before saving.
+
+2. **AI Task Breakdown** — `AITaskBreakdown.vue` modal. User enters a goal → AI returns 3-6 subtasks → user edits/selects → batch adds to store. Triggered from Toolbar (desktop) or MobileToolbar (mobile).
+
+3. **AI Weekly Report** — `AIWeeklyReport.vue` modal. SSE streams a Markdown report from Claude based on this week's task data. Typewriter effect with `marked` rendering. Copy button. Triggered from TopNav (desktop) or MobileTopNav (mobile).
+
+### Testing
+
+**Vitest** (`vitest.config.js`): Unit tests for utility functions (`src/utils/__tests__/helpers.test.js`, 27 tests) and store actions (`src/stores/__tests__/taskStore.test.js`). Run with `npm test`.
+
+**Playwright** (`playwright.config.js`): E2E tests in `e2e/` for task CRUD, filters, AI parse UI. Run with `npm run test:e2e`. Uses Chromium headless.
+
+### CI/CD
+
+`.github/workflows/ci.yml`: on push/PR to main → `npm ci` → `vitest run` → `vite build`. Artifacts uploaded.
+
+`nginx.conf`: SPA fallback + `/api/` reverse proxy to Express + Gzip + cache headers. For production deployment.
 
 ### Styles
 

@@ -24,6 +24,9 @@
       </button>
       <div v-if="store.hasAlerts" class="reminder-dot"></div>
     </div>
+    <button class="nav-btn" @click="$emit('open-weekly-report')" style="color:var(--accent);">
+      <FileText :size="14" /> AI 周报
+    </button>
     <button class="nav-btn" @click="$emit('open-settings')">
       <Settings :size="14" /> 设置
     </button>
@@ -36,9 +39,9 @@
 <script setup>
 import { useTaskStore } from '../stores/taskStore.js'
 import { useAuthStore } from '../stores/authStore.js'
-import { CheckSquare, Lock, Bell, Settings, Plus } from 'lucide-vue-next'
+import { CheckSquare, Lock, Bell, Settings, Plus, FileText } from 'lucide-vue-next'
 
 const store = useTaskStore()
 const auth = useAuthStore()
-defineEmits(['open-settings', 'open-add'])
+defineEmits(['open-settings', 'open-add', 'open-weekly-report'])
 </script>
