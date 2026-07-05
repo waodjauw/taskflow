@@ -55,12 +55,13 @@ npm run dev          # Vite :5173 + Express :3001 同时启动
 ## 部署
 
 ```bash
-# Render 部署（完整功能）
-# 连接 GitHub 仓库，Build: npm ci && npm run build，Start: npm start
+# Render（完整功能，含 AI）
+# 连接 GitHub 仓库，自动从 main 分支构建部署
+# Build: npm install && npm run build，Start: npm start
 # 环境变量: DEEPSEEK_API_KEY
 
-# GitHub Pages（仅前端）
-BASE_PATH=/test/ npm run deploy
+# GitHub Pages（仅前端静态，自动部署）
+# push 到 main → GitHub Actions 自动测试 → 构建 → 部署
 ```
 
 ## 项目结构
@@ -89,8 +90,7 @@ taskflow/
 │   ├── utils/helpers.js            # 工具函数
 │   └── style/                      # CSS 文件
 ├── e2e/                            # Playwright E2E
-├── .github/workflows/ci.yml        # GitHub Actions
-└── nginx.conf                      # Nginx 配置参考
+├── .github/workflows/deploy.yml      # GitHub Actions：测试 → 构建 → 部署 Pages
 ```
 
 ## 产品要点
