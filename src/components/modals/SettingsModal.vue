@@ -125,9 +125,17 @@
                   <button @click="catStore.deleteCategory(cat.id)" style="padding:3px 8px;border-radius:6px;border:1px solid var(--border-color);background:var(--bg-card);color:var(--text-muted);font-size:11px;cursor:pointer;">删除</button>
                 </div>
               </div>
-              <div style="display:flex;gap:8px;flex-wrap:wrap;">
+              <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
                 <input type="text" class="form-input" v-model="newCatName" placeholder="新类别名称…" style="flex:1;min-width:140px;" />
-                <input type="color" v-model="newCatColor" style="width:36px;height:36px;border:none;border-radius:8px;cursor:pointer;background:none;" />
+                <div style="display:flex;gap:4px;">
+                  <button v-for="c in colorPalette" :key="c"
+                    @click="newCatColor = c"
+                    :style="{
+                      width:'28px', height:'28px', borderRadius:'50%', border:'2px solid ' + (newCatColor === c ? 'var(--text-primary)' : 'transparent'),
+                      background: c, cursor:'pointer', outline:'none'
+                    }"
+                  />
+                </div>
                 <button class="btn-primary" @click="addCat" style="padding:8px 14px;">
                   <Plus :size="13" />
                 </button>
@@ -158,6 +166,7 @@ const store = useSettingsStore()
 const catStore = useCategoryStore()
 const newCatName = ref('')
 const newCatColor = ref('#6366f1')
+const colorPalette = ['#6366f1', '#0ea5e9', '#ec4899', '#22c55e', '#f59e0b', '#ef4444', '#8b5cf6', '#14b8a6', '#f97316', '#64748b']
 
 function close() { emit('update:modelValue', false) }
 function openPinChange() { close(); emit('open-pin-change') }
