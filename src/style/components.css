@@ -361,8 +361,7 @@
 /* ===== Modal Overlay ===== */
 .modal-overlay {
   position: fixed; inset: 0;
-  background: rgba(0,0,0,0.4);
-  backdrop-filter: blur(4px);
+  background: rgba(0,0,0,0.5);
   z-index: 500;
   display: flex; align-items: center; justify-content: center;
   animation: fadeIn 0.2s ease;
@@ -511,8 +510,7 @@
 /* ===== Lock Screen ===== */
 .lock-screen {
   position: fixed; inset: 0;
-  background: rgba(15,23,42,0.96);
-  backdrop-filter: blur(20px);
+  background: rgba(15,23,42,0.98);
   z-index: 999;
   display: flex; align-items: center; justify-content: center;
   flex-direction: column;

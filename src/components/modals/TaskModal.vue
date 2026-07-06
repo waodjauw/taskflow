@@ -1,6 +1,6 @@
 <template>
   <Teleport to="body">
-    <div v-if="modelValue" class="modal-overlay" @click.self="$emit('update:modelValue', false)">
+    <div v-show="modelValue" class="modal-overlay" @click.self="$emit('update:modelValue', false)">
       <div class="modal-box">
         <div class="modal-header">
           <div style="width:36px;height:36px;background:var(--accent-light);border-radius:9px;display:flex;align-items:center;justify-content:center;color:var(--accent);">
@@ -174,10 +174,14 @@ async function aiParse() {
   }
 }
 
+let dupTimer = null
 function checkDup() {
   if (!form.value.title.trim()) { showDupWarning.value = false; return }
-  const dup = store.isDuplicateTask(form.value.title, form.value.deadline, props.taskId || null)
-  showDupWarning.value = dup
+  clearTimeout(dupTimer)
+  dupTimer = setTimeout(() => {
+    const dup = store.isDuplicateTask(form.value.title, form.value.deadline, props.taskId || null)
+    showDupWarning.value = dup
+  }, 300)
 }
 
 function save() {
