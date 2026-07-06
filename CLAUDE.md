@@ -18,7 +18,7 @@ npm run test:e2e     # Playwright E2E tests
 
 There is no linter or formatter configured.
 
-The Vite `base` defaults to `/` (for Render). For GitHub Pages, set `BASE_PATH=/test/` before building. Don't hardcode base — use the env var.
+The Vite `base` defaults to `/` (for Render). For GitHub Pages, set `BASE_PATH=/taskflow/` before building. Don't hardcode base — use the env var.
 
 Default PIN is `1234`. PIN is stored in plain text in `localStorage` — it's a casual guard, not real security.
 
@@ -141,7 +141,7 @@ Three AI-powered features backed by DeepSeek API:
 
 ### CI/CD
 
-`.github/workflows/deploy.yml`: on push to main → `npm install` → `vitest run` → `vite build` (with `BASE_PATH=/test/`) → deploy to GitHub Pages via `actions/deploy-pages`.
+`.github/workflows/deploy.yml`: on push to main → `npm install` → `vitest run` → `vite build` (with `BASE_PATH=/taskflow/`) → deploy to GitHub Pages via `actions/deploy-pages`.
 
 Render auto-deploys from main branch: `npm install` → `npm run build` → `npm start`.
 

@@ -7,7 +7,7 @@
 | 环境 | 地址 | AI 功能 |
 |------|------|---------|
 | Render（完整版） | https://taskflow-plst.onrender.com/ | ✅ 可用 |
-| GitHub Pages | https://waodjauw.github.io/test/ | 仅前端壳 |
+| GitHub Pages | https://waodjauw.github.io/taskflow/ | 仅前端壳 |
 
 > Render 免费套餐有 15 分钟休眠机制，首次打开可能稍慢（冷启动）。
 
