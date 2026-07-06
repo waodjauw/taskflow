@@ -136,6 +136,7 @@
                     }"
                   />
                 </div>
+                <span style="width:1px;height:24px;background:var(--border-color);flex-shrink:0;"></span>
                 <button class="btn-primary" @click="addCat" style="padding:8px 14px;">
                   <Plus :size="13" />
                 </button>
