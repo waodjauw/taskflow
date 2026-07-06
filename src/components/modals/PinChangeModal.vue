@@ -1,6 +1,6 @@
 <template>
   <Teleport to="body">
-    <div v-if="modelValue" class="modal-overlay" @click.self="close">
+    <div v-show="modelValue" class="modal-overlay" @click.self="close">
       <div class="modal-box modal-sm">
         <div class="modal-header">
           <div class="modal-title">修改 PIN 码</div>

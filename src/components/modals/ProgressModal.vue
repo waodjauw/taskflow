@@ -1,6 +1,6 @@
 <template>
   <Teleport to="body">
-    <div v-if="modelValue" class="modal-overlay" @click.self="close">
+    <div v-show="modelValue" class="modal-overlay" @click.self="close">
       <div class="modal-box modal-sm">
         <div class="modal-header">
           <div class="modal-title">更新任务进度</div>
