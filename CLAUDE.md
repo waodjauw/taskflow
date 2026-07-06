@@ -78,10 +78,12 @@ Tablet uses the desktop tree but `src/style/mobile.css` adjusts it via `@media (
 
 ### Breakpoints
 
-Defined in `src/composables/useDevice.js` (module-level singleton with `matchMedia` listeners):
+Defined in `src/composables/useDevice.js` (module-level singleton with `matchMedia` listener):
 - Mobile: `max-width: 767px`
-- Tablet: `768px–1023px`
+- Tablet: `768px–1023px` (CSS-only — reuses desktop component tree, adjusted via `mobile.css`)
 - Desktop: `≥1024px`
+
+Only `isMobile` is used in JS (for `v-if` layout switching). Tablet/desktop distinction is handled purely in CSS.
 
 ### State (Pinia stores)
 
