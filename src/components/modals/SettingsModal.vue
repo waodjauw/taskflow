@@ -9,7 +9,7 @@
           <div class="modal-title">偏好设置</div>
           <div class="modal-close" @click="close"><X :size="16" /></div>
         </div>
-        <div class="modal-body" style="display:grid;grid-template-columns:1fr 1fr;gap:24px;">
+        <div class="modal-body" style="display:grid;grid-template-columns:repeat(auto-fit, minmax(260px, 1fr));gap:24px;">
           <!-- Left Column -->
           <div>
             <!-- Theme -->
