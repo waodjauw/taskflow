@@ -102,17 +102,20 @@ Only `isMobile` is used in JS (for `v-if` layout switching). Tablet/desktop dist
 - `categoryStore` → `taskStore` (categoryBadges counts tasks per category, deleteCategory checks for tasks)
 - `batchStore` → `taskStore` (batchSelectAll reads filteredTasks, batchMarkDone/batchDelete mutate tasks)
 - `contextMenuStore` → `taskStore` (contextTask getter finds task by ID)
-- `authStore` → `settingsStore` (loadFromStorage reads pinEnabled to set isLocked)
+- `authStore` → `settingsStore` (init reads pinEnabled to set isLocked)
 
-**Initialization order** in `App.vue` `onMounted` (matters because of the authStore→settingsStore dep):
-1. `settingsStore.loadFromStorage()`
-2. `authStore.loadFromStorage()`
-3. `taskStore.loadFromStorage()`
-4. `categoryStore.loadFromStorage()`
+**Persistence**: Uses `pinia-plugin-persistedstate`. Each persistable store declares a `persist` config (`key`, `storage`, `paths`). The plugin auto-saves on state changes and auto-loads on store creation. `paths` restricts which properties are persisted (e.g. taskStore only persists `tasks`, authStore only `pin`). batchStore and contextMenuStore have no `persist` config and are not persisted.
+
+**Initialization** in `App.vue` `onMounted`:
+1. `authStore.init()` — sets `isLocked` from settings
+2. Seed demo data if `tasks` array is empty and no localStorage data
+3. `settingsStore.applyTheme()`, `taskStore.syncFromRoute()`, `scheduleReminders()`
+
+Legacy key `taskflow_data_v3` migration is handled once in `main.js` before Pinia is created.
 
 **Utility functions** are in `src/utils/helpers.js`: `isToday`, `isThisWeek`, `isThisMonth`, `isOverdue`, `formatDeadline`, `advanceDeadline`, `getPriorityLabel`, `getPriorityTagClass`, `genId`, `genCatId`. Import from `../utils/helpers.js` — do NOT duplicate these.
 
-`loadFromStorage()` is called from `App.vue` `onMounted`; `scheduleReminders` re-runs on `watch` of tasks/notification settings. First-time load auto-injects 8 demo tasks and 5 default categories.
+`scheduleReminders` re-runs on `watch` of tasks/notification settings. First-time load auto-injects 8 demo tasks and 5 default categories.
 
 ### Composables
 
