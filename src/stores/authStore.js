@@ -10,24 +10,16 @@ export const useAuthStore = defineStore("auth", {
     isLocked: false,
   }),
 
-  actions: {
-    loadFromStorage() {
-      try {
-        const raw = localStorage.getItem(PIN_KEY);
-        if (raw) this.pin = raw;
-        const settingsStore = useSettingsStore();
-        this.isLocked = settingsStore.settings.pinEnabled;
-      } catch (e) {
-        // silent fail
-      }
-    },
+  persist: {
+    key: PIN_KEY,
+    storage: localStorage,
+    paths: ["pin"],
+  },
 
-    _save() {
-      try {
-        localStorage.setItem(PIN_KEY, this.pin);
-      } catch (e) {
-        // silent fail
-      }
+  actions: {
+    init() {
+      const settingsStore = useSettingsStore();
+      this.isLocked = settingsStore.settings.pinEnabled;
     },
 
     verifyPin(inputPin) {
@@ -39,16 +31,13 @@ export const useAuthStore = defineStore("auth", {
       return false;
     },
 
-    lockApp() {
-      this.isLocked = true;
-    },
+    lockApp() { this.isLocked = true; },
 
     changePin(oldPin, newPin, confirmPin) {
       if (oldPin !== this.pin) return { ok: false, msg: "当前 PIN 码错误" };
       if (newPin.length !== 4) return { ok: false, msg: "PIN 码必须为 4 位" };
       if (newPin !== confirmPin) return { ok: false, msg: "两次输入不一致" };
       this.pin = newPin;
-      this._save();
       toastService.showToast("PIN 码已修改", "success");
       return { ok: true };
     },

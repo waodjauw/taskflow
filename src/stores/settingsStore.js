@@ -16,55 +16,23 @@ export const useSettingsStore = defineStore("settings", {
     },
   }),
 
+  persist: {
+    key: SETTINGS_KEY,
+    storage: localStorage,
+  },
+
   actions: {
-    loadFromStorage() {
-      try {
-        const raw = localStorage.getItem(SETTINGS_KEY);
-        if (raw) Object.assign(this.settings, JSON.parse(raw));
-      } catch (e) {
-        // silent fail for settings
-      }
-    },
-
-    _save() {
-      try {
-        localStorage.setItem(SETTINGS_KEY, JSON.stringify(this.settings));
-      } catch (e) {
-        // silent fail for settings
-      }
-    },
-
     applyTheme(theme) {
       this.settings.theme = theme;
       document.documentElement.removeAttribute("data-theme");
       if (theme !== "light")
         document.documentElement.setAttribute("data-theme", theme);
-      this._save();
     },
 
-    setLayout(layout) {
-      this.settings.layout = layout;
-      this._save();
-    },
-
-    setCardStyle(style) {
-      this.settings.cardStyle = style;
-      this._save();
-    },
-
-    setProgressDisplay(mode) {
-      this.settings.progressDisplay = mode;
-      this._save();
-    },
-
-    toggleSetting(key) {
-      this.settings[key] = !this.settings[key];
-      this._save();
-    },
-
-    setRemindAhead(min) {
-      this.settings.remindAhead = parseInt(min);
-      this._save();
-    },
+    setLayout(layout) { this.settings.layout = layout; },
+    setCardStyle(style) { this.settings.cardStyle = style; },
+    setProgressDisplay(mode) { this.settings.progressDisplay = mode; },
+    toggleSetting(key) { this.settings[key] = !this.settings[key]; },
+    setRemindAhead(min) { this.settings.remindAhead = parseInt(min); },
   },
 });

@@ -3,7 +3,6 @@ import { toastService } from "../composables/useToast.js";
 import { genId, isToday, isThisWeek, isThisMonth, isOverdue, advanceDeadline } from "../utils/helpers.js";
 
 const STORAGE_KEY = "taskflow_tasks";
-const OLD_STORAGE_KEY = "taskflow_data_v3";
 
 export const useTaskStore = defineStore("task", {
   state: () => ({
@@ -11,6 +10,12 @@ export const useTaskStore = defineStore("task", {
     filters: { search: "", cat: "", cycle: "", priority: "" },
     activeNav: "all",
   }),
+
+  persist: {
+    key: STORAGE_KEY,
+    storage: localStorage,
+    paths: ["tasks"],
+  },
 
   getters: {
     filteredTasks(state) {
@@ -126,32 +131,6 @@ export const useTaskStore = defineStore("task", {
   },
 
   actions: {
-    loadFromStorage() {
-      try {
-        const raw = localStorage.getItem(STORAGE_KEY);
-        if (raw) {
-          this.tasks = JSON.parse(raw);
-        } else {
-          const oldRaw = localStorage.getItem(OLD_STORAGE_KEY);
-          if (oldRaw) {
-            const saved = JSON.parse(oldRaw);
-            if (saved.tasks) this.tasks = saved.tasks;
-            this._save();
-          }
-        }
-      } catch (e) {
-        toastService.showToast("数据加载失败：" + e.message, "error");
-      }
-
-      if (
-        !this.tasks.length &&
-        !localStorage.getItem(STORAGE_KEY) &&
-        !localStorage.getItem(OLD_STORAGE_KEY)
-      ) {
-        this._seedDemoData();
-      }
-    },
-
     _seedDemoData() {
       const now = new Date();
       const fmt = (d) => d.toISOString().slice(0, 16);
@@ -161,132 +140,23 @@ export const useTaskStore = defineStore("task", {
         return x;
       };
       this.tasks = [
-        {
-          id: "t1",
-          title: "完成Q4季度报告",
-          desc: "整理数据并制作PPT演示文稿",
-          cat: "work",
-          priority: "critical",
-          deadline: fmt(d(0)),
-          reminder: fmt(d(0)),
-          progress: 65,
-          done: false,
-          cycle: "none",
-          createdAt: now.toISOString(),
-        },
-        {
-          id: "t2",
-          title: "阅读《深度工作》第三章",
-          desc: "做读书笔记，提炼核心观点",
-          cat: "study",
-          priority: "medium",
-          deadline: fmt(d(2)),
-          reminder: fmt(d(1)),
-          progress: 30,
-          done: false,
-          cycle: "none",
-          createdAt: now.toISOString(),
-        },
-        {
-          id: "t3",
-          title: "每日晨跑 5km",
-          desc: "保持健康习惯",
-          cat: "health",
-          priority: "low",
-          deadline: fmt(d(0)),
-          reminder: "",
-          progress: 0,
-          done: false,
-          cycle: "daily",
-          createdAt: now.toISOString(),
-        },
-        {
-          id: "t4",
-          title: "审核项目合同条款",
-          desc: "重点核查第5、8、11条款",
-          cat: "finance",
-          priority: "high",
-          deadline: fmt(d(-1)),
-          reminder: "",
-          progress: 80,
-          done: false,
-          cycle: "none",
-          createdAt: now.toISOString(),
-        },
-        {
-          id: "t5",
-          title: "准备团队周会议程",
-          desc: "收集各组进展，整理议题",
-          cat: "work",
-          priority: "high",
-          deadline: fmt(d(1)),
-          reminder: fmt(d(1)),
-          progress: 40,
-          done: false,
-          cycle: "weekly",
-          createdAt: now.toISOString(),
-        },
-        {
-          id: "t6",
-          title: "更新个人知识库",
-          desc: "将本周学习内容归档至 Notion",
-          cat: "personal",
-          priority: "low",
-          deadline: fmt(d(3)),
-          reminder: "",
-          progress: 10,
-          done: true,
-          cycle: "none",
-          createdAt: now.toISOString(),
-        },
-        {
-          id: "t7",
-          title: "系统性能优化方案",
-          desc: "分析慢查询，制定索引策略",
-          cat: "work",
-          priority: "medium",
-          deadline: fmt(d(5)),
-          reminder: "",
-          progress: 0,
-          done: false,
-          cycle: "none",
-          createdAt: now.toISOString(),
-        },
-        {
-          id: "t8",
-          title: "月度家庭预算规划",
-          desc: "记录收支，制定下月预算",
-          cat: "finance",
-          priority: "medium",
-          deadline: fmt(d(7)),
-          reminder: "",
-          progress: 50,
-          done: false,
-          cycle: "monthly",
-          createdAt: now.toISOString(),
-        },
+        { id: "t1", title: "完成Q4季度报告", desc: "整理数据并制作PPT演示文稿", cat: "work", priority: "critical", deadline: fmt(d(0)), reminder: fmt(d(0)), progress: 65, done: false, cycle: "none", createdAt: now.toISOString() },
+        { id: "t2", title: "阅读《深度工作》第三章", desc: "做读书笔记，提炼核心观点", cat: "study", priority: "medium", deadline: fmt(d(2)), reminder: fmt(d(1)), progress: 30, done: false, cycle: "none", createdAt: now.toISOString() },
+        { id: "t3", title: "每日晨跑 5km", desc: "保持健康习惯", cat: "health", priority: "low", deadline: fmt(d(0)), reminder: "", progress: 0, done: false, cycle: "daily", createdAt: now.toISOString() },
+        { id: "t4", title: "审核项目合同条款", desc: "重点核查第5、8、11条款", cat: "finance", priority: "high", deadline: fmt(d(-1)), reminder: "", progress: 80, done: false, cycle: "none", createdAt: now.toISOString() },
+        { id: "t5", title: "准备团队周会议程", desc: "收集各组进展，整理议题", cat: "work", priority: "high", deadline: fmt(d(1)), reminder: fmt(d(1)), progress: 40, done: false, cycle: "weekly", createdAt: now.toISOString() },
+        { id: "t6", title: "更新个人知识库", desc: "将本周学习内容归档至 Notion", cat: "personal", priority: "low", deadline: fmt(d(3)), reminder: "", progress: 10, done: true, cycle: "none", createdAt: now.toISOString() },
+        { id: "t7", title: "系统性能优化方案", desc: "分析慢查询，制定索引策略", cat: "work", priority: "medium", deadline: fmt(d(5)), reminder: "", progress: 0, done: false, cycle: "none", createdAt: now.toISOString() },
+        { id: "t8", title: "月度家庭预算规划", desc: "记录收支，制定下月预算", cat: "finance", priority: "medium", deadline: fmt(d(7)), reminder: "", progress: 50, done: false, cycle: "monthly", createdAt: now.toISOString() },
       ];
-      this._save();
-    },
-
-    _save() {
-      try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(this.tasks));
-      } catch (e) {
-        toastService.showToast("数据保存失败：" + e.message, "error");
-      }
     },
 
     isDuplicateTask(title, deadlineStr, excludeId) {
       const titleNorm = title.trim().toLowerCase();
-      const date = deadlineStr
-        ? new Date(deadlineStr).toDateString()
-        : "__none__";
+      const date = deadlineStr ? new Date(deadlineStr).toDateString() : "__none__";
       return this.tasks.some((t) => {
         if (t.id === excludeId) return false;
-        const tDate = t.deadline
-          ? new Date(t.deadline).toDateString()
-          : "__none__";
+        const tDate = t.deadline ? new Date(t.deadline).toDateString() : "__none__";
         return t.title.trim().toLowerCase() === titleNorm && tDate === date;
       });
     },
@@ -296,13 +166,7 @@ export const useTaskStore = defineStore("task", {
         toastService.showToast("任务重复！相同标题+日期已存在", "error");
         return false;
       }
-      this.tasks.push({
-        id: genId(),
-        ...payload,
-        done: false,
-        createdAt: new Date().toISOString(),
-      });
-      this._save();
+      this.tasks.push({ id: genId(), ...payload, done: false, createdAt: new Date().toISOString() });
       toastService.showToast("任务已添加", "success");
       return true;
     },
@@ -314,14 +178,12 @@ export const useTaskStore = defineStore("task", {
       }
       const idx = this.tasks.findIndex((t) => t.id === id);
       if (idx >= 0) Object.assign(this.tasks[idx], payload);
-      this._save();
       toastService.showToast("任务已更新", "success");
       return true;
     },
 
     deleteTask(id) {
       this.tasks = this.tasks.filter((t) => t.id !== id);
-      this._save();
       toastService.showToast("任务已删除", "info");
     },
 
@@ -332,17 +194,12 @@ export const useTaskStore = defineStore("task", {
         t.deadline = advanceDeadline(t.deadline, t.cycle);
         if (t.reminder) t.reminder = advanceDeadline(t.reminder, t.cycle);
         t.progress = 0;
-        this._save();
         toastService.showToast("本轮完成 🎉 已推进到下一周期", "success");
         return;
       }
       t.done = !t.done;
       if (t.done) t.progress = 100;
-      this._save();
-      toastService.showToast(
-        t.done ? "任务已完成 🎉" : "任务已重新开启",
-        t.done ? "success" : "info",
-      );
+      toastService.showToast(t.done ? "任务已完成 🎉" : "任务已重新开启", t.done ? "success" : "info");
     },
 
     updateProgress(id, val) {
@@ -352,23 +209,16 @@ export const useTaskStore = defineStore("task", {
         t.deadline = advanceDeadline(t.deadline, t.cycle);
         if (t.reminder) t.reminder = advanceDeadline(t.reminder, t.cycle);
         t.progress = 0;
-        this._save();
         toastService.showToast("本轮完成 🎉 已推进到下一周期", "success");
         return;
       }
       t.progress = val;
       if (val === 100) t.done = true;
-      this._save();
       toastService.showToast("进度已更新为 " + val + "%", "success");
     },
 
-    setFilter(key, val) {
-      this.filters[key] = val;
-    },
-
-    setActiveNav(nav) {
-      this.activeNav = nav;
-    },
+    setFilter(key, val) { this.filters[key] = val; },
+    setActiveNav(nav) { this.activeNav = nav; },
 
     syncFromRoute(route) {
       const p = route.path;
@@ -377,20 +227,14 @@ export const useTaskStore = defineStore("task", {
       else if (p === "/week") this.activeNav = "week";
       else if (p === "/overdue") this.activeNav = "overdue";
       else if (p === "/done") this.activeNav = "done";
-      else if (p.startsWith("/priority/"))
-        this.activeNav = "p-" + route.params.priority;
-      else if (p.startsWith("/category/"))
-        this.activeNav = "cat-" + route.params.id;
+      else if (p.startsWith("/priority/")) this.activeNav = "p-" + route.params.priority;
+      else if (p.startsWith("/category/")) this.activeNav = "cat-" + route.params.id;
       else this.activeNav = "all";
     },
 
     notifyBell() {
       const overdue = this.tasks.filter((t) => isOverdue(t) && !t.done);
-      if (overdue.length)
-        toastService.showToast(
-          "有 " + overdue.length + " 个任务已逾期！",
-          "warn",
-        );
+      if (overdue.length) toastService.showToast("有 " + overdue.length + " 个任务已逾期！", "warn");
       else toastService.showToast("暂无待处理提醒", "info");
     },
   },

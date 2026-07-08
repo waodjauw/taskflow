@@ -96,12 +96,9 @@ function onGlobalClick() {
 }
 
 onMounted(() => {
-  settingsStore.loadFromStorage()
-  authStore.loadFromStorage()
-  taskStore.loadFromStorage()
-  categoryStore.loadFromStorage()
-  if (localStorage.getItem('taskflow_data_v3')) {
-    localStorage.removeItem('taskflow_data_v3')
+  authStore.init()
+  if (!taskStore.tasks.length && !localStorage.getItem('taskflow_tasks')) {
+    taskStore._seedDemoData()
   }
   settingsStore.applyTheme(settingsStore.settings.theme)
   taskStore.syncFromRoute(route)
